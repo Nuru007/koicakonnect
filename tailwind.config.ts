@@ -16,9 +16,9 @@ const config: Config = {
           300: "#8eccff",
           400: "#00AFFF", // Secondary Accent
           500: "#0072FE", // Primary Brand
-          600: "#005cd6",
-          700: "#0047ad",
-          800: "#003c8c",
+          600: "#0072FE", // Primary Brand Text & Accents (#0072FE)
+          700: "#005cd6", // Hover Darker
+          800: "#0047ad",
           900: "#043474",
           950: "#02204c",
         },
