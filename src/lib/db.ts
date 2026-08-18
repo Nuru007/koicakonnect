@@ -687,6 +687,13 @@ class DatabaseManager {
   }
 
   public async deleteUser(userId: string): Promise<boolean> {
+    const existing = await this.getUserById(userId);
+    if (existing && existing.profileImage && existing.profileImage.includes('/avatars/')) {
+      const fileName = existing.profileImage.split('/avatars/').pop()?.split('?')[0];
+      if (fileName) {
+        supabase.storage.from('avatars').remove([fileName]).catch(() => {});
+      }
+    }
     const { error } = await supabase.from('users').delete().eq('id', userId);
     return !error;
   }
