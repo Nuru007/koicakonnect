@@ -311,35 +311,119 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Category Exploration Section */}
+      {/* Category Exploration Section — High Impact Featured Industries Showcase */}
       <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="font-display font-extrabold text-3xl text-slate-900 mb-3">
-            {t.home.exploreCategories}
-          </h2>
-          <p className="text-sm text-slate-500">
-            {t.home.exploreCategoriesSubtitle}
-          </p>
-        </div>
+        <div className="bg-[#091E19] rounded-3xl p-6 sm:p-10 lg:p-12 border border-emerald-900/40 text-white shadow-2xl relative overflow-hidden">
+          
+          {/* Subtle Ambient Glow */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {categories.slice(0, 15).map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/discover?category=${cat.slug}`}
-              className="glass-card glass-card-hover rounded-2xl p-4 flex flex-col items-start text-left group border border-slate-200/80 bg-white/90"
-            >
-              <div className="w-10 h-10 rounded-xl bg-brand-50 group-hover:bg-brand-500 text-brand-600 group-hover:text-white flex items-center justify-center mb-3 transition-colors shadow-2xs">
-                <CategoryIcon nameOrIcon={cat.icon || cat.slug} className="w-5 h-5" />
+          {/* Section Header with Inspiration styling */}
+          <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-3">
+                <span>🌱 What We Do</span>
+                <span>•</span>
+                <span>Focus Disciplines</span>
               </div>
-              <h3 className="font-display font-bold text-sm text-slate-900 group-hover:text-brand-600 transition-colors">
-                {cat.name}
-              </h3>
-              <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
-                {cat.description || 'Explore talent'}
+              <h2 className="font-display font-extrabold text-2xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
+                We Connect Leaders Across<br className="hidden sm:inline" /> High-Impact Fields
+              </h2>
+            </div>
+
+            <div className="flex flex-col items-start md:items-end gap-3 max-w-md">
+              <p className="text-xs sm:text-sm text-emerald-100/70 leading-relaxed md:text-right">
+                Connecting researchers, founders, and technical leaders across global innovation ecosystems.
               </p>
-            </Link>
-          ))}
+              <Link
+                href="/categories"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors group"
+              >
+                <span>View All Categories</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+          {/* 5 Featured High-Impact Photography Cards */}
+          <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+            {[
+              {
+                num: 'No - 01',
+                name: 'Agriculture',
+                slug: 'agriculture',
+                description: 'Agritech, sustainable farming, food systems & genomics',
+                image: '/categories/agriculture.jpg',
+              },
+              {
+                num: 'No - 02',
+                name: 'Education',
+                slug: 'education',
+                description: 'Edtech, academia, higher education & instructional design',
+                image: '/categories/education.jpg',
+              },
+              {
+                num: 'No - 03',
+                name: 'Energy',
+                slug: 'energy',
+                description: 'Clean energy, renewables, power grids, nuclear & battery storage',
+                image: '/categories/energy.jpg',
+              },
+              {
+                num: 'No - 04',
+                name: 'Engineering',
+                slug: 'engineering',
+                description: 'Hardware, robotics, mechanical, civil & electrical engineering',
+                image: '/categories/engineering.jpg',
+              },
+              {
+                num: 'No - 05',
+                name: 'Entrepreneurship',
+                slug: 'entrepreneurship',
+                description: 'Startup founders, venture builders & angel investors',
+                image: '/categories/entrepreneurship.jpg',
+              },
+            ].map((cat) => (
+              <Link
+                key={cat.slug}
+                href={`/discover?category=${cat.slug}`}
+                className="group relative h-[360px] sm:h-[400px] rounded-3xl overflow-hidden border border-white/10 hover:border-emerald-400/50 transition-all duration-300 transform hover:-translate-y-1.5 shadow-lg flex flex-col justify-between p-4 bg-slate-950"
+              >
+                {/* Background Image with Zoom on Hover */}
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                />
+
+                {/* Dark Vignette Overlay for Readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/20 group-hover:from-black/95 transition-colors" />
+
+                {/* Top Corner Pill: Card Number */}
+                <div className="relative z-10 flex justify-end">
+                  <span className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white/90 text-[11px] font-mono font-medium shadow-sm">
+                    {cat.num}
+                  </span>
+                </div>
+
+                {/* Bottom Glassmorphic Card Container */}
+                <div className="relative z-10 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-white shadow-xl transition-all duration-300 group-hover:bg-white/20 group-hover:border-white/30">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <h3 className="font-display font-bold text-base sm:text-lg text-white group-hover:text-emerald-300 transition-colors tracking-tight">
+                      {cat.name}
+                    </h3>
+                    <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-emerald-500 group-hover:text-white transition-all flex-shrink-0">
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-white/80 line-clamp-2 leading-relaxed">
+                    {cat.description}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
