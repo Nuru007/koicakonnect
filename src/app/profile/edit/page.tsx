@@ -28,7 +28,9 @@ import {
   Check,
   Camera,
   AlertCircle,
+  ChevronDown,
 } from 'lucide-react';
+import { COUNTRIES } from '@/lib/countries';
 
 export default function ProfileEditPage() {
   const { user, refreshUser, loading: authLoading } = useAuth();
@@ -660,13 +662,23 @@ export default function ProfileEditPage() {
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                     Country
                   </label>
-                  <input
-                    type="text"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    placeholder="e.g. United Kingdom, United States, France"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
-                  />
+                  <div className="relative">
+                    <select
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      className="w-full pl-3.5 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:border-brand-500 appearance-none cursor-pointer"
+                    >
+                      <option value="">Select country...</option>
+                      {COUNTRIES.map((c) => (
+                        <option key={c.code} value={c.name}>
+                          {c.flag} {c.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
                 </div>
 
                 <div>

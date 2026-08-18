@@ -11,6 +11,7 @@ import {
   SearchResult 
 } from './types';
 import { generateResetToken, hashResetToken, logDevResetLink } from './auth';
+import { COUNTRIES } from './countries';
 
 function slugify(text: string): string {
   return text
@@ -939,19 +940,24 @@ class DatabaseManager {
 
     if (!data) return [];
 
-    const countMap: Record<string, number> = {};
+    const countMap: Record<string, { country: string; count: number }> = {};
     for (const u of data) {
       if (u.name?.trim() && u.role?.trim()) {
-        const country = u.country.trim();
-        if (country) {
-          countMap[country] = (countMap[country] || 0) + 1;
+        const rawCountry = u.country?.trim();
+        if (rawCountry) {
+          const lower = rawCountry.toLowerCase();
+          const matched = COUNTRIES.find((c) => c.name.toLowerCase() === lower);
+          const canonicalName = matched ? matched.name : (rawCountry.charAt(0).toUpperCase() + rawCountry.slice(1));
+
+          if (!countMap[lower]) {
+            countMap[lower] = { country: canonicalName, count: 0 };
+          }
+          countMap[lower].count += 1;
         }
       }
     }
 
-    return Object.entries(countMap)
-      .map(([country, count]) => ({ country, count }))
-      .sort((a, b) => b.count - a.count);
+    return Object.values(countMap).sort((a, b) => b.count - a.count);
   }
 
   public async getPlatformStats(): Promise<{

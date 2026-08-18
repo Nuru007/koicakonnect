@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Globe, Users, ArrowRight, Sparkles, MapPin } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { getCountryFlag } from '@/lib/countries';
 
 export default function CountriesPage() {
   const { t } = useLanguage();
@@ -58,18 +59,18 @@ export default function CountriesPage() {
               <Link
                 key={country}
                 href={`/discover?country=${encodeURIComponent(country)}`}
-                className="glass-card glass-card-hover rounded-3xl p-6 flex items-center justify-between group border border-slate-200/80 bg-white/95"
+                className="glass-card glass-card-hover rounded-3xl p-6 flex items-center justify-between group border border-slate-200/80 bg-white/95 shadow-sm hover:shadow-md transition-all"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-2xl bg-brand-50 group-hover:bg-brand-500 text-brand-600 group-hover:text-white flex items-center justify-center transition-colors">
-                    <MapPin className="w-5 h-5" />
+                  <div className="w-12 h-12 rounded-2xl bg-brand-50 group-hover:bg-brand-500 text-xl flex items-center justify-center transition-colors shadow-2xs">
+                    <span>{getCountryFlag(country)}</span>
                   </div>
                   <div>
                     <h3 className="font-display font-bold text-base text-slate-900 group-hover:text-brand-600 transition-colors">
                       {country}
                     </h3>
-                    <p className="text-xs text-slate-400">
-                      {count} {count === 1 ? 'professional' : 'professionals'}
+                    <p className="text-xs text-slate-400 font-medium">
+                      {count} {count === 1 ? 'member' : 'members'}
                     </p>
                   </div>
                 </div>

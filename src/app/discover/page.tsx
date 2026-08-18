@@ -6,6 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { UserProfile, Category, Skill, Interest, Language } from '@/lib/types';
 import { ProfileCard } from '@/components/ProfileCard';
 import { EmptyState } from '@/components/EmptyState';
+import { getCountryFlag } from '@/lib/countries';
 import {
   Search,
   Filter,
@@ -429,12 +430,15 @@ function DiscoverContent() {
                         <button
                           key={c.country}
                           onClick={() => toggleCountry(c.country)}
-                          className={`w-full text-left px-2 py-1 rounded text-xs font-medium flex items-center justify-between ${
+                          className={`w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between transition-colors ${
                             isSelected ? 'bg-brand-50 text-brand-600 font-bold' : 'text-slate-600 hover:bg-slate-50'
                           }`}
                         >
-                          <span className="truncate">{c.country}</span>
-                          <span className="text-[10px] text-slate-400">({c.count})</span>
+                          <span className="truncate flex items-center gap-1.5">
+                            <span>{getCountryFlag(c.country)}</span>
+                            <span>{c.country}</span>
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">({c.count})</span>
                         </button>
                       );
                     })

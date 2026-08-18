@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { Sparkles, Mail, Lock, User, Briefcase, MapPin, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Mail, Lock, User, Briefcase, MapPin, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2, ChevronDown } from 'lucide-react';
+import { COUNTRIES } from '@/lib/countries';
 
 export default function SignUpPage() {
   const { register } = useAuth();
@@ -32,7 +33,7 @@ export default function SignUpPage() {
   const isEmailValid = formData.email.trim() === '' || emailRegex.test(formData.email.trim());
   const isPasswordLongEnough = formData.password.length >= 8;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     if (error) {
       setError(null);
@@ -259,20 +260,29 @@ export default function SignUpPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Country
+                Country *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <MapPin className="w-4 h-4" />
                 </div>
-                <input
-                  type="text"
+                <select
+                  required
                   name="country"
                   value={formData.country}
                   onChange={handleChange}
-                  placeholder="e.g. United Kingdom"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
-                />
+                  className="w-full pl-10 pr-9 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select country...</option>
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.name}>
+                      {c.flag} {c.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
             </div>
 
