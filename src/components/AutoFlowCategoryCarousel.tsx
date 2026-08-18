@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, ArrowLeft, ArrowUpRight, Sparkles, Pause, Play } from 'lucide-react';
+import { ArrowRight, Sparkles, Pause, Play } from 'lucide-react';
 
 export interface CategoryItem {
   num: string;
@@ -59,26 +59,17 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const total = CATEGORIES.length;
 
-  // Auto-scroll timer: advances by 1 card every 3.2 seconds
+  // Faster Auto-scroll timer: advances smoothly by 1 card every 1.8 seconds
   useEffect(() => {
     if (isPaused) return;
 
     const timer = setInterval(() => {
-      handleNext();
-    }, 3200);
+      setIsTransitioning(true);
+      setCurrentIndex((prev) => prev + 1);
+    }, 1800);
 
     return () => clearInterval(timer);
   }, [isPaused, currentIndex]);
-
-  const handleNext = () => {
-    setIsTransitioning(true);
-    setCurrentIndex((prev) => prev + 1);
-  };
-
-  const handlePrev = () => {
-    setIsTransitioning(true);
-    setCurrentIndex((prev) => prev - 1);
-  };
 
   // Seamless wrap-around when reaching boundaries of the tripled array
   const handleTransitionEnd = () => {
@@ -139,10 +130,10 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
           </div>
         </div>
 
-        {/* 3 Visible Cards Viewport with Continuous Auto-Scroll Track */}
+        {/* 3 Visible Cards Viewport with Fast Smooth Auto-Scroll Track */}
         <div className="relative z-10 overflow-hidden py-2">
           <div
-            className={`flex gap-6 ${isTransitioning ? 'transition-transform duration-700 ease-in-out' : ''}`}
+            className={`flex gap-6 ${isTransitioning ? 'transition-transform duration-500 ease-in-out' : ''}`}
             style={{
               transform: `translateX(calc(-${currentIndex} * (100% / 3 + 8px)))`,
             }}
@@ -155,13 +146,13 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
               >
                 <Link
                   href={`/discover?category=${cat.slug}`}
-                  className="group relative h-[400px] sm:h-[440px] rounded-3xl overflow-hidden border border-white/20 hover:border-sky-300/80 transition-all duration-500 transform hover:-translate-y-2 shadow-2xl flex flex-col justify-between p-5 bg-blue-950 block"
+                  className="group relative h-[400px] sm:h-[440px] rounded-3xl overflow-hidden border border-white/20 hover:border-sky-300/80 transition-all duration-300 transform hover:-translate-y-2 shadow-2xl flex flex-col justify-between p-5 bg-blue-950 block"
                 >
                   {/* Photography with Subtle Hover Zoom */}
                   <img
                     src={cat.image}
                     alt={cat.name}
-                    className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                    className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
                   />
 
                   {/* Dark Contrast Gradient Vignette */}
@@ -175,15 +166,10 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
                   </div>
 
                   {/* Bottom Glassmorphic Card Container */}
-                  <div className="relative z-10 p-5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-2xl transition-all duration-300 group-hover:bg-white/20 group-hover:border-white/40">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <h3 className="font-display font-extrabold text-lg sm:text-xl text-white group-hover:text-sky-200 transition-colors tracking-tight">
-                        {cat.name}
-                      </h3>
-                      <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white group-hover:bg-sky-400 group-hover:text-slate-900 transition-all flex-shrink-0 shadow-sm">
-                        <ArrowUpRight className="w-4 h-4" />
-                      </div>
-                    </div>
+                  <div className="relative z-10 p-5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-2xl transition-all duration-300 group-hover:bg-white/25 group-hover:border-white/40">
+                    <h3 className="font-display font-extrabold text-lg sm:text-xl text-white group-hover:text-sky-200 transition-colors tracking-tight mb-1.5">
+                      {cat.name}
+                    </h3>
                     <p className="text-xs text-blue-50/90 line-clamp-2 leading-relaxed font-medium">
                       {cat.description}
                     </p>
@@ -194,8 +180,8 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
           </div>
         </div>
 
-        {/* Carousel Footer Controls */}
-        <div className="relative z-10 mt-10 pt-6 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Carousel Footer: Clean Progress Indicator & Status */}
+        <div className="relative z-10 mt-8 pt-5 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-4">
           
           {/* Progress Indicator Dots */}
           <div className="flex items-center gap-2">
@@ -222,31 +208,15 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
             </span>
           </div>
 
-          {/* Nav Controls */}
-          <div className="flex items-center gap-3">
+          {/* Clean Status Indicator */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setIsPaused(!isPaused)}
-              className="px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-sky-100 text-xs font-bold flex items-center gap-1.5 border border-white/20 transition-all"
+              className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sky-100 text-xs font-bold flex items-center gap-1.5 border border-white/15 transition-all"
               title={isPaused ? 'Resume auto-scroll' : 'Pause auto-scroll'}
             >
               {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-              <span>{isPaused ? 'Paused' : 'Autoscroll Active'}</span>
-            </button>
-
-            <button
-              onClick={handlePrev}
-              aria-label="Previous category"
-              className="w-10 h-10 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center border border-white/20 transition-all active:scale-95 shadow-md"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={handleNext}
-              aria-label="Next category"
-              className="w-10 h-10 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center border border-white/20 transition-all active:scale-95 shadow-md"
-            >
-              <ArrowRight className="w-4 h-4" />
+              <span>{isPaused ? 'Paused' : 'Continuous Scroll'}</span>
             </button>
           </div>
         </div>
