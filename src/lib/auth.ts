@@ -47,7 +47,7 @@ export async function getCurrentUser(): Promise<User | null> {
     const session = await verifySessionToken(token);
     if (!session || !session.userId) return null;
 
-    const user = db.getUserById(session.userId);
+    const user = await db.getUserById(session.userId);
     return user || null;
   } catch {
     return null;

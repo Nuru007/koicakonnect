@@ -1,5 +1,4 @@
-import fs from 'fs';
-import path from 'path';
+import { supabase } from './supabase';
 import { 
   User, 
   UserProfile, 
@@ -12,70 +11,6 @@ import {
   SearchResult 
 } from './types';
 
-interface DatabaseSchema {
-  users: User[];
-  categories: Category[];
-  skills: Skill[];
-  interests: Interest[];
-  languages: Language[];
-  userCategories: { userId: string; categoryId: string }[];
-  userSkills: { userId: string; skillId: string }[];
-  userInterests: { userId: string; interestId: string }[];
-  userLanguages: { userId: string; languageId: string }[];
-  professionalLinks: ProfessionalLink[];
-}
-
-const DB_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DB_DIR, 'koicakonnect.json');
-
-const INITIAL_CATEGORIES: { name: string; slug: string; icon: string; description: string }[] = [
-  { name: 'Technology', slug: 'technology', icon: 'Laptop', description: 'Software, cloud, cybersecurity & digital infrastructure' },
-  { name: 'Healthcare', slug: 'healthcare', icon: 'Activity', description: 'Medicine, healthtech, clinical research & biotech' },
-  { name: 'Engineering', slug: 'engineering', icon: 'Cpu', description: 'Hardware, robotics, mechanical, civil & electrical engineering' },
-  { name: 'Finance', slug: 'finance', icon: 'TrendingUp', description: 'Fintech, investment, banking, venture capital & crypto' },
-  { name: 'Education', slug: 'education', icon: 'GraduationCap', description: 'Edtech, academia, higher education & instructional design' },
-  { name: 'Logistics', slug: 'logistics', icon: 'Truck', description: 'Supply chain, freight, maritime & autonomous transport' },
-  { name: 'Research', slug: 'research', icon: 'Microscope', description: 'Scientific exploration, R&D, quantum computing & lab science' },
-  { name: 'Entrepreneurship', slug: 'entrepreneurship', icon: 'Rocket', description: 'Startup founders, venture builders & early-stage innovators' },
-  { name: 'Agriculture', slug: 'agriculture', icon: 'Sprout', description: 'Agritech, sustainable farming, food systems & genomics' },
-  { name: 'Energy', slug: 'energy', icon: 'Zap', description: 'Clean energy, renewables, power grids, nuclear & battery storage' },
-  { name: 'Manufacturing', slug: 'manufacturing', icon: 'Factory', description: 'Industrial automation, 3D printing & precision fabrication' },
-  { name: 'Telecommunications', slug: 'telecommunications', icon: 'Radio', description: '5G/6G, satellite constellations, networking & fiber optics' },
-  { name: 'Media & Creative', slug: 'media-creative', icon: 'Sparkles', description: 'Design, audiovisual production, gaming & digital arts' },
-  { name: 'Government', slug: 'government', icon: 'Landmark', description: 'Public policy, civic tech, regulatory affairs & smart cities' },
-  { name: 'Other', slug: 'other', icon: 'Layers', description: 'Interdisciplinary, emerging fields & specialized domains' },
-];
-
-const INITIAL_LANGUAGES: { name: string; code: string }[] = [
-  { name: 'English', code: 'en' },
-  { name: 'French', code: 'fr' },
-  { name: 'Korean', code: 'ko' },
-  { name: 'Spanish', code: 'es' },
-  { name: 'German', code: 'de' },
-  { name: 'Mandarin Chinese', code: 'zh' },
-  { name: 'Japanese', code: 'ja' },
-  { name: 'Portuguese', code: 'pt' },
-  { name: 'Arabic', code: 'ar' },
-  { name: 'Hindi', code: 'hi' },
-  { name: 'Italian', code: 'it' },
-  { name: 'Dutch', code: 'nl' },
-];
-
-const INITIAL_SKILLS: string[] = [
-  'Python', 'Machine Learning', 'Artificial Intelligence', 'Robotics', 'PCB Design',
-  'Embedded Systems', 'Product Management', 'Data Science', 'Hardware Engineering',
-  'TypeScript', 'React', 'Next.js', 'Rust', 'Go', 'Kubernetes', 'Cloud Architecture',
-  'Deep Learning', 'Computer Vision', 'NLP', 'Bioinformatics', 'Quantum Computing',
-  'Cybersecurity', 'Solidity', 'FPGA', 'UI/UX Design', 'Systems Architecture'
-];
-
-const INITIAL_INTERESTS: string[] = [
-  'Artificial Intelligence', 'Healthcare Technology', 'Semiconductor Technology',
-  'Medical Devices', 'Robotics', 'Climate Technology', 'FinTech', 'Space Exploration',
-  'Autonomous Vehicles', 'Synthetic Biology', 'Quantum Information', 'Clean Energy',
-  'Human-Computer Interaction', 'Decentralized Systems', 'Neurotechnology'
-];
-
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -85,77 +20,69 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-function getInitialDatabase(): DatabaseSchema {
+async function uploadAvatarIfBase64(userId: string, base64Data: string): Promise<string> {
+  if (!base64Data || !base64Data.startsWith('data:image')) {
+    return base64Data || '';
+  }
+
+  try {
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return base64Data;
+    }
+
+    const contentType = matches[1];
+    const buffer = Buffer.from(matches[2], 'base64');
+    const ext = contentType.includes('png') ? 'png' : 'jpg';
+    const filePath = `user_${userId}_avatar.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, buffer, {
+        contentType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.warn(`Failed to upload avatar to Supabase Storage:`, uploadError.message);
+      return base64Data;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return publicUrlData.publicUrl;
+  } catch (err) {
+    console.error('Error uploading avatar:', err);
+    return base64Data;
+  }
+}
+
+function mapUserRowToUser(row: any): User {
   return {
-    users: [], // Strictly 0 fake users in database!
-    categories: INITIAL_CATEGORIES.map((cat, i) => ({
-      id: `cat_${i + 1}`,
-      name: cat.name,
-      slug: cat.slug,
-      icon: cat.icon,
-      description: cat.description,
-    })),
-    languages: INITIAL_LANGUAGES.map((lang, i) => ({
-      id: `lang_${i + 1}`,
-      name: lang.name,
-      code: lang.code,
-    })),
-    skills: INITIAL_SKILLS.map((skill, i) => ({
-      id: `skill_${i + 1}`,
-      name: skill,
-      slug: slugify(skill),
-    })),
-    interests: INITIAL_INTERESTS.map((interest, i) => ({
-      id: `int_${i + 1}`,
-      name: interest,
-      slug: slugify(interest),
-    })),
-    userCategories: [],
-    userSkills: [],
-    userInterests: [],
-    userLanguages: [],
-    professionalLinks: [],
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    passwordHash: row.password_hash,
+    username: row.username,
+    role: row.role || '',
+    organisation: row.organisation || '',
+    country: row.country || '',
+    city: row.city || '',
+    bio: row.bio || '',
+    profileImage: row.profile_image || '',
+    preferredLanguage: row.preferred_language || 'en',
+    status: row.status || 'draft',
+    isDiscoverable: row.is_discoverable !== false,
+    isDeactivated: Boolean(row.is_deactivated),
+    isAdmin: Boolean(row.is_admin),
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
   };
 }
 
 class DatabaseManager {
-  private db: DatabaseSchema | null = null;
-
-  private load(): DatabaseSchema {
-    if (this.db) return this.db;
-
-    if (!fs.existsSync(DB_DIR)) {
-      fs.mkdirSync(DB_DIR, { recursive: true });
-    }
-
-    if (!fs.existsSync(DB_FILE)) {
-      const initial = getInitialDatabase();
-      fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
-      this.db = initial;
-      return this.db;
-    }
-
-    try {
-      const raw = fs.readFileSync(DB_FILE, 'utf-8');
-      this.db = JSON.parse(raw);
-      return this.db!;
-    } catch (err) {
-      console.error('Error loading DB, resetting to schema:', err);
-      const initial = getInitialDatabase();
-      fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
-      this.db = initial;
-      return this.db;
-    }
-  }
-
-  private save(): void {
-    if (!this.db) return;
-    if (!fs.existsSync(DB_DIR)) {
-      fs.mkdirSync(DB_DIR, { recursive: true });
-    }
-    fs.writeFileSync(DB_FILE, JSON.stringify(this.db, null, 2), 'utf-8');
-  }
-
   // --- Eligibility & Validation ---
   public isProfileComplete(user: User): boolean {
     if (!user) return false;
@@ -173,20 +100,28 @@ class DatabaseManager {
   }
 
   // --- Category Operations ---
-  public getCategories(): Category[] {
-    const db = this.load();
-    return [...db.categories];
+  public async getCategories(): Promise<Category[]> {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name');
+    if (error || !data) return [];
+    return data;
   }
 
-  public getCategoryBySlug(slug: string): Category | undefined {
-    const db = this.load();
-    return db.categories.find(c => c.slug === slug);
+  public async getCategoryBySlug(slug: string): Promise<Category | null> {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+    if (error || !data) return null;
+    return data;
   }
 
-  public addCategory(name: string, description?: string, icon?: string): Category {
-    const db = this.load();
+  public async addCategory(name: string, description?: string, icon?: string): Promise<Category> {
     const slug = slugify(name);
-    const existing = db.categories.find(c => c.slug === slug);
+    const existing = await this.getCategoryBySlug(slug);
     if (existing) return existing;
 
     const newCat: Category = {
@@ -196,22 +131,32 @@ class DatabaseManager {
       icon: icon || 'Tag',
       description: description || '',
     };
-    db.categories.push(newCat);
-    this.save();
+
+    await supabase.from('categories').insert(newCat);
     return newCat;
   }
 
   // --- Skills Operations ---
-  public getSkills(): Skill[] {
-    const db = this.load();
-    return [...db.skills];
+  public async getSkills(): Promise<Skill[]> {
+    const { data, error } = await supabase
+      .from('skills')
+      .select('*')
+      .order('name');
+    if (error || !data) return [];
+    return data;
   }
 
-  public getOrCreateSkill(name: string): Skill {
-    const db = this.load();
+  public async getOrCreateSkill(name: string): Promise<Skill> {
     const trimmed = name.trim();
     const slug = slugify(trimmed);
-    const existing = db.skills.find(s => s.slug === slug || s.name.toLowerCase() === trimmed.toLowerCase());
+
+    const { data: existing } = await supabase
+      .from('skills')
+      .select('*')
+      .or(`slug.eq.${slug},name.ilike.${trimmed}`)
+      .limit(1)
+      .single();
+
     if (existing) return existing;
 
     const newSkill: Skill = {
@@ -219,22 +164,32 @@ class DatabaseManager {
       name: trimmed,
       slug,
     };
-    db.skills.push(newSkill);
-    this.save();
+
+    await supabase.from('skills').insert(newSkill);
     return newSkill;
   }
 
   // --- Interests Operations ---
-  public getInterests(): Interest[] {
-    const db = this.load();
-    return [...db.interests];
+  public async getInterests(): Promise<Interest[]> {
+    const { data, error } = await supabase
+      .from('interests')
+      .select('*')
+      .order('name');
+    if (error || !data) return [];
+    return data;
   }
 
-  public getOrCreateInterest(name: string): Interest {
-    const db = this.load();
+  public async getOrCreateInterest(name: string): Promise<Interest> {
     const trimmed = name.trim();
     const slug = slugify(trimmed);
-    const existing = db.interests.find(i => i.slug === slug || i.name.toLowerCase() === trimmed.toLowerCase());
+
+    const { data: existing } = await supabase
+      .from('interests')
+      .select('*')
+      .or(`slug.eq.${slug},name.ilike.${trimmed}`)
+      .limit(1)
+      .single();
+
     if (existing) return existing;
 
     const newInterest: Interest = {
@@ -242,27 +197,42 @@ class DatabaseManager {
       name: trimmed,
       slug,
     };
-    db.interests.push(newInterest);
-    this.save();
+
+    await supabase.from('interests').insert(newInterest);
     return newInterest;
   }
 
   // --- Languages Operations ---
-  public getLanguages(): Language[] {
-    const db = this.load();
-    return [...db.languages];
+  public async getLanguages(): Promise<Language[]> {
+    const { data, error } = await supabase
+      .from('languages')
+      .select('*')
+      .order('name');
+    if (error || !data) return [];
+    return data;
   }
 
-  public getLanguageByCode(code: string): Language | undefined {
-    const db = this.load();
-    return db.languages.find(l => l.code.toLowerCase() === code.toLowerCase());
+  public async getLanguageByCode(code: string): Promise<Language | null> {
+    const { data, error } = await supabase
+      .from('languages')
+      .select('*')
+      .ilike('code', code)
+      .single();
+    if (error || !data) return null;
+    return data;
   }
 
-  public getOrCreateLanguage(name: string, code?: string): Language {
-    const db = this.load();
+  public async getOrCreateLanguage(name: string, code?: string): Promise<Language> {
     const trimmed = name.trim();
     const langCode = (code || slugify(trimmed).substring(0, 3)).toLowerCase();
-    const existing = db.languages.find(l => l.code === langCode || l.name.toLowerCase() === trimmed.toLowerCase());
+
+    const { data: existing } = await supabase
+      .from('languages')
+      .select('*')
+      .or(`code.eq.${langCode},name.ilike.${trimmed}`)
+      .limit(1)
+      .single();
+
     if (existing) return existing;
 
     const newLang: Language = {
@@ -270,38 +240,45 @@ class DatabaseManager {
       name: trimmed,
       code: langCode,
     };
-    db.languages.push(newLang);
-    this.save();
+
+    await supabase.from('languages').insert(newLang);
     return newLang;
   }
 
   // --- User Profile Aggregation ---
-  private assembleUserProfile(user: User): UserProfile {
-    const db = this.load();
+  private async assembleUserProfile(user: User): Promise<UserProfile> {
+    const [categoriesRes, skillsRes, interestsRes, languagesRes, linksRes] = await Promise.all([
+      supabase.from('user_categories').select('category:categories(*)').eq('user_id', user.id),
+      supabase.from('user_skills').select('skill:skills(*)').eq('user_id', user.id),
+      supabase.from('user_interests').select('interest:interests(*)').eq('user_id', user.id),
+      supabase.from('user_languages').select('language:languages(*)').eq('user_id', user.id),
+      supabase.from('professional_links').select('*').eq('user_id', user.id),
+    ]);
 
-    const userCatIds = db.userCategories
-      .filter(uc => uc.userId === user.id)
-      .map(uc => uc.categoryId);
-    const categories = db.categories.filter(c => userCatIds.includes(c.id));
+    const categories: Category[] = (categoriesRes.data || [])
+      .map((item: any) => item.category)
+      .filter(Boolean);
 
-    const userSkillIds = db.userSkills
-      .filter(us => us.userId === user.id)
-      .map(us => us.skillId);
-    const skills = db.skills.filter(s => userSkillIds.includes(s.id));
+    const skills: Skill[] = (skillsRes.data || [])
+      .map((item: any) => item.skill)
+      .filter(Boolean);
 
-    const userInterestIds = db.userInterests
-      .filter(ui => ui.userId === user.id)
-      .map(ui => ui.interestId);
-    const interests = db.interests.filter(i => userInterestIds.includes(i.id));
+    const interests: Interest[] = (interestsRes.data || [])
+      .map((item: any) => item.interest)
+      .filter(Boolean);
 
-    const userLangIds = db.userLanguages
-      .filter(ul => ul.userId === user.id)
-      .map(ul => ul.languageId);
-    const languages = db.languages.filter(l => userLangIds.includes(l.id));
+    const languages: Language[] = (languagesRes.data || [])
+      .map((item: any) => item.language)
+      .filter(Boolean);
 
-    const links = db.professionalLinks.filter(pl => pl.userId === user.id);
+    const links: ProfessionalLink[] = (linksRes.data || []).map((pl: any) => ({
+      id: pl.id,
+      userId: pl.user_id,
+      platform: pl.platform,
+      url: pl.url,
+      title: pl.title || '',
+    }));
 
-    // Sanitize user object to avoid exposing password hash
     const { passwordHash: _ignored, ...safeUser } = user;
 
     return {
@@ -317,25 +294,45 @@ class DatabaseManager {
   }
 
   // --- User Operations ---
-  public getUserById(id: string): User | undefined {
-    const db = this.load();
-    return db.users.find(u => u.id === id && !u.isDeactivated);
+  public async getUserById(id: string): Promise<User | null> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .eq('is_deactivated', false)
+      .single();
+
+    if (error || !data) return null;
+    return mapUserRowToUser(data);
   }
 
-  public getUserByEmail(email: string): User | undefined {
-    const db = this.load();
-    return db.users.find(u => u.email.toLowerCase() === email.toLowerCase().trim() && !u.isDeactivated);
+  public async getUserByEmail(email: string): Promise<User | null> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase().trim())
+      .eq('is_deactivated', false)
+      .single();
+
+    if (error || !data) return null;
+    return mapUserRowToUser(data);
   }
 
-  public getUserByUsername(username: string): UserProfile | undefined {
-    const db = this.load();
+  public async getUserByUsername(username: string): Promise<UserProfile | null> {
     const cleanUsername = username.toLowerCase().trim();
-    const user = db.users.find(u => u.username.toLowerCase() === cleanUsername && !u.isDeactivated);
-    if (!user) return undefined;
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', cleanUsername)
+      .eq('is_deactivated', false)
+      .single();
+
+    if (error || !data) return null;
+    const user = mapUserRowToUser(data);
     return this.assembleUserProfile(user);
   }
 
-  public createUser(userData: {
+  public async createUser(userData: {
     name: string;
     email: string;
     passwordHash: string;
@@ -350,51 +347,72 @@ class DatabaseManager {
     status?: 'draft' | 'published' | 'private';
     isDiscoverable?: boolean;
     isAdmin?: boolean;
-  }): UserProfile {
-    const db = this.load();
-
+  }): Promise<UserProfile> {
     const cleanEmail = userData.email.toLowerCase().trim();
-    if (db.users.some(u => u.email.toLowerCase() === cleanEmail && !u.isDeactivated)) {
+
+    const existingEmail = await this.getUserByEmail(cleanEmail);
+    if (existingEmail) {
       throw new Error('Email already registered');
     }
 
     let username = slugify(userData.username || userData.name);
     let usernameAttempt = username;
     let counter = 1;
-    while (db.users.some(u => u.username.toLowerCase() === usernameAttempt && !u.isDeactivated)) {
+
+    while (true) {
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', usernameAttempt)
+        .eq('is_deactivated', false)
+        .single();
+
+      if (!existingUser) {
+        username = usernameAttempt;
+        break;
+      }
       usernameAttempt = `${username}-${counter}`;
       counter++;
     }
-    username = usernameAttempt;
+
+    const userId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    let profileImageUrl = userData.profileImage || '';
+    if (profileImageUrl.startsWith('data:image')) {
+      profileImageUrl = await uploadAvatarIfBase64(userId, profileImageUrl);
+    }
 
     const now = new Date().toISOString();
-    const newUser: User = {
-      id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    const userRow = {
+      id: userId,
       name: userData.name.trim(),
       email: cleanEmail,
-      passwordHash: userData.passwordHash,
+      password_hash: userData.passwordHash,
       username,
       role: userData.role || '',
       organisation: userData.organisation || '',
       country: userData.country || '',
       city: userData.city || '',
       bio: userData.bio || '',
-      profileImage: userData.profileImage || '',
-      preferredLanguage: userData.preferredLanguage || 'en',
+      profile_image: profileImageUrl,
+      preferred_language: userData.preferredLanguage || 'en',
       status: userData.status || 'draft',
-      isDiscoverable: userData.isDiscoverable !== false,
-      isDeactivated: false,
-      isAdmin: !!userData.isAdmin,
-      createdAt: now,
-      updatedAt: now,
+      is_discoverable: userData.isDiscoverable !== false,
+      is_deactivated: false,
+      is_admin: Boolean(userData.isAdmin),
+      created_at: now,
+      updated_at: now,
     };
 
-    db.users.push(newUser);
-    this.save();
-    return this.assembleUserProfile(newUser);
+    const { error } = await supabase.from('users').insert(userRow);
+    if (error) {
+      throw new Error(`Failed to create user: ${error.message}`);
+    }
+
+    const createdUser = mapUserRowToUser(userRow);
+    return this.assembleUserProfile(createdUser);
   }
 
-  public updateUserProfile(
+  public async updateUserProfile(
     userId: string,
     data: Partial<User>,
     relations?: {
@@ -404,156 +422,242 @@ class DatabaseManager {
       languageCodes?: string[];
       links?: ProfessionalLink[];
     }
-  ): UserProfile {
-    const db = this.load();
-    const userIndex = db.users.findIndex(u => u.id === userId);
-    if (userIndex === -1) {
+  ): Promise<UserProfile> {
+    const existing = await this.getUserById(userId);
+    if (!existing) {
       throw new Error('User not found');
     }
 
-    const user = db.users[userIndex];
+    const updates: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
 
-    // If username is being changed, ensure uniqueness
-    if (data.username && data.username !== user.username) {
+    if (data.username && data.username !== existing.username) {
       const cleanUsername = slugify(data.username);
-      const isTaken = db.users.some(u => u.id !== userId && u.username.toLowerCase() === cleanUsername && !u.isDeactivated);
-      if (isTaken) {
+      const { data: taken } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', cleanUsername)
+        .neq('id', userId)
+        .eq('is_deactivated', false)
+        .single();
+
+      if (taken) {
         throw new Error('Username already taken');
       }
-      user.username = cleanUsername;
+      updates.username = cleanUsername;
     }
 
-    // Update basic user fields
-    if (data.name !== undefined) user.name = data.name.trim();
-    if (data.role !== undefined) user.role = data.role.trim();
-    if (data.organisation !== undefined) user.organisation = data.organisation.trim();
-    if (data.country !== undefined) user.country = data.country.trim();
-    if (data.city !== undefined) user.city = data.city.trim();
-    if (data.bio !== undefined) user.bio = data.bio.trim();
-    if (data.profileImage !== undefined) user.profileImage = data.profileImage.trim();
-    if (data.preferredLanguage !== undefined) user.preferredLanguage = data.preferredLanguage.trim();
-    if (data.status !== undefined) user.status = data.status;
-    if (data.isDiscoverable !== undefined) user.isDiscoverable = data.isDiscoverable;
-    if (data.isDeactivated !== undefined) user.isDeactivated = data.isDeactivated;
-    if (data.passwordHash !== undefined) user.passwordHash = data.passwordHash;
-    user.updatedAt = new Date().toISOString();
+    if (data.name !== undefined) updates.name = data.name.trim();
+    if (data.role !== undefined) updates.role = data.role.trim();
+    if (data.organisation !== undefined) updates.organisation = data.organisation.trim();
+    if (data.country !== undefined) updates.country = data.country.trim();
+    if (data.city !== undefined) updates.city = data.city.trim();
+    if (data.bio !== undefined) updates.bio = data.bio.trim();
+    if (data.profileImage !== undefined) {
+      updates.profile_image = await uploadAvatarIfBase64(userId, data.profileImage.trim());
+    }
+    if (data.preferredLanguage !== undefined) updates.preferred_language = data.preferredLanguage.trim();
+    if (data.status !== undefined) updates.status = data.status;
+    if (data.isDiscoverable !== undefined) updates.is_discoverable = data.isDiscoverable;
+    if (data.isDeactivated !== undefined) updates.is_deactivated = data.isDeactivated;
+    if (data.passwordHash !== undefined) updates.password_hash = data.passwordHash;
 
-    // Update categories relation
+    const { error: userUpdateError } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', userId);
+
+    if (userUpdateError) {
+      throw new Error(`Failed to update profile: ${userUpdateError.message}`);
+    }
+
+    // Update categories
     if (relations?.categoryIds) {
-      db.userCategories = db.userCategories.filter(uc => uc.userId !== userId);
+      await supabase.from('user_categories').delete().eq('user_id', userId);
+      const categories = await this.getCategories();
+      const rowsToInsert: { user_id: string; category_id: string }[] = [];
+
       for (const catId of relations.categoryIds) {
-        if (db.categories.some(c => c.id === catId || c.slug === catId)) {
-          const category = db.categories.find(c => c.id === catId || c.slug === catId)!;
-          db.userCategories.push({ userId, categoryId: category.id });
+        const found = categories.find(c => c.id === catId || c.slug === catId);
+        if (found) {
+          rowsToInsert.push({ user_id: userId, category_id: found.id });
         }
+      }
+      if (rowsToInsert.length > 0) {
+        await supabase.from('user_categories').insert(rowsToInsert);
       }
     }
 
-    // Update skills relation
+    // Update skills
     if (relations?.skills) {
-      db.userSkills = db.userSkills.filter(us => us.userId !== userId);
+      await supabase.from('user_skills').delete().eq('user_id', userId);
+      const rowsToInsert: { user_id: string; skill_id: string }[] = [];
+
       for (const skillName of relations.skills) {
         if (skillName.trim()) {
-          const skill = this.getOrCreateSkill(skillName);
-          if (!db.userSkills.some(us => us.userId === userId && us.skillId === skill.id)) {
-            db.userSkills.push({ userId, skillId: skill.id });
+          const skill = await this.getOrCreateSkill(skillName);
+          if (!rowsToInsert.some(r => r.skill_id === skill.id)) {
+            rowsToInsert.push({ user_id: userId, skill_id: skill.id });
           }
         }
       }
+      if (rowsToInsert.length > 0) {
+        await supabase.from('user_skills').insert(rowsToInsert);
+      }
     }
 
-    // Update interests relation
+    // Update interests
     if (relations?.interests) {
-      db.userInterests = db.userInterests.filter(ui => ui.userId !== userId);
-      for (const interestName of relations.interests) {
-        if (interestName.trim()) {
-          const interest = this.getOrCreateInterest(interestName);
-          if (!db.userInterests.some(ui => ui.userId === userId && ui.interestId === interest.id)) {
-            db.userInterests.push({ userId, interestId: interest.id });
+      await supabase.from('user_interests').delete().eq('user_id', userId);
+      const rowsToInsert: { user_id: string; interest_id: string }[] = [];
+
+      for (const intName of relations.interests) {
+        if (intName.trim()) {
+          const interest = await this.getOrCreateInterest(intName);
+          if (!rowsToInsert.some(r => r.interest_id === interest.id)) {
+            rowsToInsert.push({ user_id: userId, interest_id: interest.id });
           }
         }
       }
+      if (rowsToInsert.length > 0) {
+        await supabase.from('user_interests').insert(rowsToInsert);
+      }
     }
 
-    // Update languages relation
+    // Update languages
     if (relations?.languageCodes) {
-      db.userLanguages = db.userLanguages.filter(ul => ul.userId !== userId);
+      await supabase.from('user_languages').delete().eq('user_id', userId);
+      const rowsToInsert: { user_id: string; language_id: string }[] = [];
+
       for (const langCode of relations.languageCodes) {
         if (langCode.trim()) {
-          const lang = this.getOrCreateLanguage(langCode, langCode);
-          if (!db.userLanguages.some(ul => ul.userId === userId && ul.languageId === lang.id)) {
-            db.userLanguages.push({ userId, languageId: lang.id });
+          const lang = await this.getOrCreateLanguage(langCode, langCode);
+          if (!rowsToInsert.some(r => r.language_id === lang.id)) {
+            rowsToInsert.push({ user_id: userId, language_id: lang.id });
           }
         }
+      }
+      if (rowsToInsert.length > 0) {
+        await supabase.from('user_languages').insert(rowsToInsert);
       }
     }
 
     // Update professional links
     if (relations?.links) {
-      db.professionalLinks = db.professionalLinks.filter(pl => pl.userId !== userId);
-      for (const link of relations.links) {
-        if (link.url && link.url.trim()) {
-          db.professionalLinks.push({
-            id: `link_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-            userId,
-            platform: link.platform,
-            url: link.url.trim(),
-            title: link.title || '',
-          });
-        }
+      await supabase.from('professional_links').delete().eq('user_id', userId);
+      const rowsToInsert = relations.links
+        .filter(link => link.url && link.url.trim())
+        .map(link => ({
+          id: link.id || `link_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          user_id: userId,
+          platform: link.platform,
+          url: link.url.trim(),
+          title: link.title || '',
+        }));
+
+      if (rowsToInsert.length > 0) {
+        await supabase.from('professional_links').insert(rowsToInsert);
       }
     }
 
-    this.save();
-    return this.assembleUserProfile(user);
+    const updatedUser = await this.getUserById(userId);
+    return this.assembleUserProfile(updatedUser!);
   }
 
-  public deleteUser(userId: string): boolean {
-    const db = this.load();
-    const userIndex = db.users.findIndex(u => u.id === userId);
-    if (userIndex === -1) return false;
-
-    db.users.splice(userIndex, 1);
-    db.userCategories = db.userCategories.filter(uc => uc.userId !== userId);
-    db.userSkills = db.userSkills.filter(us => us.userId !== userId);
-    db.userInterests = db.userInterests.filter(ui => ui.userId !== userId);
-    db.userLanguages = db.userLanguages.filter(ul => ul.userId !== userId);
-    db.professionalLinks = db.professionalLinks.filter(pl => pl.userId !== userId);
-    this.save();
-    return true;
+  public async deleteUser(userId: string): Promise<boolean> {
+    const { error } = await supabase.from('users').delete().eq('id', userId);
+    return !error;
   }
 
-  public deactivateUser(userId: string): boolean {
-    const db = this.load();
-    const user = db.users.find(u => u.id === userId);
-    if (!user) return false;
-    user.isDeactivated = true;
-    user.status = 'private';
-    user.updatedAt = new Date().toISOString();
-    this.save();
-    return true;
+  public async deactivateUser(userId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('users')
+      .update({
+        is_deactivated: true,
+        status: 'private',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+
+    return !error;
   }
 
-  // --- Dynamic Search and Discovery (Real Database Execution) ---
-  public getPublishedUsers(filters: SearchFilters = {}): SearchResult {
-    const db = this.load();
+  // --- Dynamic Search and Discovery ---
+  public async getPublishedUsers(filters: SearchFilters = {}): Promise<SearchResult> {
+    // 1. Fetch published and discoverable users
+    const { data: usersData, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('status', 'published')
+      .eq('is_discoverable', true)
+      .eq('is_deactivated', false)
+      .order('updated_at', { ascending: false });
 
-    // 1. Filter ONLY real, active, complete, published, and discoverable profiles
-    let candidates = db.users.filter(u => this.isEligibleForDiscover(u));
-
-    // 2. Exclude current user from their own Discover results if authenticated
-    if (filters.excludeUserId) {
-      candidates = candidates.filter(u => u.id !== filters.excludeUserId);
+    if (error || !usersData) {
+      return { users: [], total: 0, page: 1, totalPages: 1 };
     }
 
-    // 3. Keyword query search across name, role, organisation, bio, skills, interests, categories, location
+    let users = usersData.map(mapUserRowToUser).filter(u => this.isProfileComplete(u));
+
+    // Exclude current user if requested
+    if (filters.excludeUserId) {
+      users = users.filter(u => u.id !== filters.excludeUserId);
+    }
+
+    // Filter by country
+    if (filters.countries && filters.countries.length > 0) {
+      users = users.filter(u =>
+        filters.countries!.some(c => u.country.toLowerCase() === c.toLowerCase().trim())
+      );
+    }
+
+    // Assemble full profiles for rich filtering
+    const fullProfiles = await Promise.all(users.map(u => this.assembleUserProfile(u)));
+    let candidates = fullProfiles;
+
+    // Filter by Category
+    if (filters.categorySlugs && filters.categorySlugs.length > 0) {
+      candidates = candidates.filter(profile =>
+        filters.categorySlugs!.some(slug =>
+          profile.categories.some(c => c.slug.toLowerCase() === slug.toLowerCase() || c.name.toLowerCase() === slug.toLowerCase())
+        )
+      );
+    }
+
+    // Filter by Skills
+    if (filters.skillNames && filters.skillNames.length > 0) {
+      candidates = candidates.filter(profile =>
+        filters.skillNames!.every(skillFilter =>
+          profile.skills.some(s => s.name.toLowerCase() === skillFilter.toLowerCase() || s.slug === slugify(skillFilter))
+        )
+      );
+    }
+
+    // Filter by Interests
+    if (filters.interestNames && filters.interestNames.length > 0) {
+      candidates = candidates.filter(profile =>
+        filters.interestNames!.some(intFilter =>
+          profile.interests.some(i => i.name.toLowerCase() === intFilter.toLowerCase() || i.slug === slugify(intFilter))
+        )
+      );
+    }
+
+    // Filter by Language
+    if (filters.languageCodes && filters.languageCodes.length > 0) {
+      candidates = candidates.filter(profile =>
+        filters.languageCodes!.some(code =>
+          profile.languages.some(l => l.code.toLowerCase() === code.toLowerCase() || l.name.toLowerCase() === code.toLowerCase())
+        )
+      );
+    }
+
+    // Text search query
     if (filters.query && filters.query.trim()) {
       const q = filters.query.toLowerCase().trim();
       const terms = q.split(/\s+/).filter(Boolean);
 
-      candidates = candidates.filter(user => {
-        const profile = this.assembleUserProfile(user);
-        
+      candidates = candidates.filter(profile => {
         const searchableCorpus = [
           profile.name,
           profile.role,
@@ -571,68 +675,6 @@ class DatabaseManager {
       });
     }
 
-    // 4. Category Filter (multi-select)
-    if (filters.categorySlugs && filters.categorySlugs.length > 0) {
-      candidates = candidates.filter(user => {
-        const userCatIds = db.userCategories
-          .filter(uc => uc.userId === user.id)
-          .map(uc => uc.categoryId);
-        const userCats = db.categories.filter(c => userCatIds.includes(c.id));
-        return filters.categorySlugs!.some(slug => 
-          userCats.some(c => c.slug.toLowerCase() === slug.toLowerCase() || c.name.toLowerCase() === slug.toLowerCase())
-        );
-      });
-    }
-
-    // 5. Skills Filter (multi-select)
-    if (filters.skillNames && filters.skillNames.length > 0) {
-      candidates = candidates.filter(user => {
-        const userSkillIds = db.userSkills
-          .filter(us => us.userId === user.id)
-          .map(us => us.skillId);
-        const userSkills = db.skills.filter(s => userSkillIds.includes(s.id));
-        return filters.skillNames!.every(skillFilter =>
-          userSkills.some(s => s.name.toLowerCase() === skillFilter.toLowerCase() || s.slug === slugify(skillFilter))
-        );
-      });
-    }
-
-    // 6. Interests Filter (multi-select)
-    if (filters.interestNames && filters.interestNames.length > 0) {
-      candidates = candidates.filter(user => {
-        const userIntIds = db.userInterests
-          .filter(ui => ui.userId === user.id)
-          .map(ui => ui.interestId);
-        const userInterests = db.interests.filter(i => userIntIds.includes(i.id));
-        return filters.interestNames!.some(intFilter =>
-          userInterests.some(i => i.name.toLowerCase() === intFilter.toLowerCase() || i.slug === slugify(intFilter))
-        );
-      });
-    }
-
-    // 7. Country Filter (multi-select)
-    if (filters.countries && filters.countries.length > 0) {
-      candidates = candidates.filter(user =>
-        filters.countries!.some(c => user.country.toLowerCase() === c.toLowerCase().trim())
-      );
-    }
-
-    // 8. Language Filter (multi-select)
-    if (filters.languageCodes && filters.languageCodes.length > 0) {
-      candidates = candidates.filter(user => {
-        const userLangIds = db.userLanguages
-          .filter(ul => ul.userId === user.id)
-          .map(ul => ul.languageId);
-        const userLangs = db.languages.filter(l => userLangIds.includes(l.id));
-        return filters.languageCodes!.some(code =>
-          userLangs.some(l => l.code.toLowerCase() === code.toLowerCase() || l.name.toLowerCase() === code.toLowerCase())
-        );
-      });
-    }
-
-    // Sort by recent updates
-    candidates.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
     const total = candidates.length;
     const page = Math.max(1, filters.page || 1);
     const limit = Math.max(1, filters.limit || 24);
@@ -640,7 +682,7 @@ class DatabaseManager {
     const paginated = candidates.slice((page - 1) * limit, page * limit);
 
     return {
-      users: paginated.map(u => this.assembleUserProfile(u)),
+      users: paginated,
       total,
       page,
       totalPages,
@@ -648,28 +690,54 @@ class DatabaseManager {
   }
 
   // --- Aggregations & Metrics ---
-  public getCategoryStats(): { category: Category; count: number }[] {
-    const db = this.load();
-    const eligibleUserIds = new Set(
-      db.users.filter(u => this.isEligibleForDiscover(u)).map(u => u.id)
-    );
+  public async getCategoryStats(): Promise<{ category: Category; count: number }[]> {
+    const categories = await this.getCategories();
+    const { data: userCatData } = await supabase
+      .from('user_categories')
+      .select('category_id, user:users(id, status, is_discoverable, is_deactivated, name, role)');
 
-    return db.categories.map(category => {
-      const count = db.userCategories.filter(
-        uc => uc.categoryId === category.id && eligibleUserIds.has(uc.userId)
-      ).length;
-      return { category, count };
-    });
+    const countMap: Record<string, number> = {};
+    if (userCatData) {
+      for (const item of userCatData) {
+        const user: any = item.user;
+        if (
+          user &&
+          user.status === 'published' &&
+          user.is_discoverable !== false &&
+          !user.is_deactivated &&
+          user.name?.trim() &&
+          user.role?.trim()
+        ) {
+          countMap[item.category_id] = (countMap[item.category_id] || 0) + 1;
+        }
+      }
+    }
+
+    return categories.map(category => ({
+      category,
+      count: countMap[category.id] || 0,
+    }));
   }
 
-  public getCountriesWithCounts(): { country: string; count: number }[] {
-    const db = this.load();
-    const eligibleUsers = db.users.filter(u => this.isEligibleForDiscover(u) && u.country.trim().length > 0);
-    
+  public async getCountriesWithCounts(): Promise<{ country: string; count: number }[]> {
+    const { data } = await supabase
+      .from('users')
+      .select('country, name, role')
+      .eq('status', 'published')
+      .eq('is_discoverable', true)
+      .eq('is_deactivated', false)
+      .neq('country', '');
+
+    if (!data) return [];
+
     const countMap: Record<string, number> = {};
-    for (const u of eligibleUsers) {
-      const country = u.country.trim();
-      countMap[country] = (countMap[country] || 0) + 1;
+    for (const u of data) {
+      if (u.name?.trim() && u.role?.trim()) {
+        const country = u.country.trim();
+        if (country) {
+          countMap[country] = (countMap[country] || 0) + 1;
+        }
+      }
     }
 
     return Object.entries(countMap)
@@ -677,22 +745,46 @@ class DatabaseManager {
       .sort((a, b) => b.count - a.count);
   }
 
-  public getPlatformStats(): { totalPublished: number; totalSkills: number; totalCategories: number; totalCountries: number } {
-    const db = this.load();
-    const eligibleUsers = db.users.filter(u => this.isEligibleForDiscover(u));
-    const countries = new Set(eligibleUsers.map(u => u.country.trim()).filter(Boolean));
+  public async getPlatformStats(): Promise<{
+    totalPublished: number;
+    totalSkills: number;
+    totalCategories: number;
+    totalCountries: number;
+  }> {
+    const [publishedUsers, skills, categories, countries] = await Promise.all([
+      supabase
+        .from('users')
+        .select('country, name, role')
+        .eq('status', 'published')
+        .eq('is_discoverable', true)
+        .eq('is_deactivated', false),
+      supabase.from('skills').select('id', { count: 'exact', head: true }),
+      supabase.from('categories').select('id', { count: 'exact', head: true }),
+      this.getCountriesWithCounts(),
+    ]);
+
+    const eligibleUsers = (publishedUsers.data || []).filter(
+      u => u.name?.trim() && u.role?.trim()
+    );
 
     return {
       totalPublished: eligibleUsers.length,
-      totalSkills: db.skills.length,
-      totalCategories: db.categories.length,
-      totalCountries: countries.size,
+      totalSkills: skills.count || 0,
+      totalCategories: categories.count || 0,
+      totalCountries: countries.length,
     };
   }
 
-  public getAllUsersAdmin(): UserProfile[] {
-    const db = this.load();
-    return db.users.filter(u => !u.isDeactivated).map(u => this.assembleUserProfile(u));
+  public async getAllUsersAdmin(): Promise<UserProfile[]> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('is_deactivated', false)
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return [];
+    const users = data.map(mapUserRowToUser);
+    return Promise.all(users.map(u => this.assembleUserProfile(u)));
   }
 }
 

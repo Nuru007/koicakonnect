@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Username required' }, { status: 400 });
     }
 
-    const profile = db.getUserByUsername(username);
+    const profile = await db.getUserByUsername(username);
     if (!profile) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

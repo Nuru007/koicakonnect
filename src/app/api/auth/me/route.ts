@@ -11,12 +11,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ user: null });
     }
 
-    const user = db.getUserById(session.userId);
+    const user = await db.getUserById(session.userId);
     if (!user) {
       return NextResponse.json({ user: null });
     }
 
-    const profile = db.getUserByUsername(user.username);
+    const profile = await db.getUserByUsername(user.username);
     return NextResponse.json({ user: profile });
   } catch (error) {
     console.error('Error fetching session user:', error);

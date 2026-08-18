@@ -5,11 +5,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const categories = db.getCategories();
-    const skills = db.getSkills();
-    const interests = db.getInterests();
-    const languages = db.getLanguages();
-    const countriesWithCounts = db.getCountriesWithCounts();
+    const [categories, skills, interests, languages, countriesWithCounts] = await Promise.all([
+      db.getCategories(),
+      db.getSkills(),
+      db.getInterests(),
+      db.getLanguages(),
+      db.getCountriesWithCounts(),
+    ]);
 
     return NextResponse.json({
       categories,

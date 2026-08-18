@@ -11,12 +11,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = db.getUserById(session.userId);
+    const user = await db.getUserById(session.userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const profile = db.getUserByUsername(user.username);
+    const profile = await db.getUserByUsername(user.username);
     return NextResponse.json({ profile });
   } catch (error) {
     console.error('Error fetching profile:', error);
@@ -51,7 +51,7 @@ export async function PUT(req: NextRequest) {
       links,
     } = body;
 
-    const updatedProfile = db.updateUserProfile(
+    const updatedProfile = await db.updateUserProfile(
       session.userId,
       {
         name,

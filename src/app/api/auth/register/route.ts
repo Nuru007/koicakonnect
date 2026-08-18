@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existing = db.getUserByEmail(email);
+    const existing = await db.getUserByEmail(email);
     if (existing) {
       return NextResponse.json(
         { error: 'An account with this email already exists' },
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
-    const userProfile = db.createUser({
+    const userProfile = await db.createUser({
       name,
       email,
       passwordHash,

@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     };
 
     // Execute real database query
-    const results = db.getPublishedUsers(filters);
+    const results = await db.getPublishedUsers(filters);
 
     return NextResponse.json(results);
   } catch (error: any) {

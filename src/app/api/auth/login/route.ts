@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = db.getUserByEmail(email);
+    const user = await db.getUserByEmail(email);
     if (!user || !user.passwordHash) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const fullProfile = db.getUserByUsername(user.username);
+    const fullProfile = await db.getUserByUsername(user.username);
     if (!fullProfile) {
       return NextResponse.json(
         { error: 'Profile not found' },

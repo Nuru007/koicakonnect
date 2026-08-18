@@ -5,9 +5,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const stats = db.getPlatformStats();
-    const categoryStats = db.getCategoryStats();
-    const countries = db.getCountriesWithCounts();
+    const [stats, categoryStats, countries] = await Promise.all([
+      db.getPlatformStats(),
+      db.getCategoryStats(),
+      db.getCountriesWithCounts(),
+    ]);
 
     return NextResponse.json({
       stats,

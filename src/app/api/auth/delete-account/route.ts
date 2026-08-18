@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
     const { action } = await req.json().catch(() => ({ action: 'delete' }));
 
     if (action === 'deactivate') {
-      db.deactivateUser(session.userId);
+      await db.deactivateUser(session.userId);
     } else {
-      db.deleteUser(session.userId);
+      await db.deleteUser(session.userId);
     }
 
     const response = NextResponse.json({
