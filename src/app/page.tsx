@@ -7,7 +7,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Category, UserProfile } from '@/lib/types';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ProfileCard } from '@/components/ProfileCard';
-import { SwipeProfileDeck } from '@/components/SwipeProfileDeck';
 import { HeroToggle } from '@/components/HeroToggle';
 import { FloatingFlags } from '@/components/FloatingFlags';
 import {
@@ -276,10 +275,12 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Dynamic Rendering: Swipeable People Showcase or intentional empty state */}
+        {/* Dynamic Rendering: Genuine users or intentional empty state */}
         {recentUsers.length > 0 ? (
-          <div className="py-4">
-            <SwipeProfileDeck profiles={recentUsers} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {recentUsers.map((profile) => (
+              <ProfileCard key={profile.id} profile={profile} />
+            ))}
           </div>
         ) : (
           <div className="glass-card rounded-3xl p-10 sm:p-14 text-center max-w-2xl mx-auto border border-brand-200/60 bg-white/90 shadow-sm relative overflow-hidden">
