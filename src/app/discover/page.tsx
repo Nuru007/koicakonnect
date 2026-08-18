@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserProfile, Category, Skill, Interest, Language } from '@/lib/types';
 import { ProfileCard } from '@/components/ProfileCard';
+import { SwipeProfileDeck } from '@/components/SwipeProfileDeck';
 import { EmptyState } from '@/components/EmptyState';
 import {
   Search,
@@ -17,6 +18,7 @@ import {
   Sparkles,
   Users,
   Check,
+  ArrowRight,
 } from 'lucide-react';
 
 function DiscoverContent() {
@@ -207,6 +209,50 @@ function DiscoverContent() {
           <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto">
             {t.discover.subtitle}
           </p>
+        </div>
+
+        {/* Recently Joined — Swipeable Discovery Showcase */}
+        {!loading && users.length > 0 && !hasActiveFilters && (
+          <section className="mb-14 pb-12 border-b border-slate-200/80">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-bold mb-2 border border-brand-100">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Real-Time Discovery Feed</span>
+                </div>
+                <h2 className="font-display font-black text-2xl sm:text-3xl text-slate-900 tracking-tight">
+                  Recently Joined
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                  Newly published profiles ready to be discovered
+                </p>
+              </div>
+
+              <a
+                href="#all-registered-people"
+                className="text-xs font-bold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 group self-start sm:self-auto"
+              >
+                <span>View All Registered People</span>
+                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+              </a>
+            </div>
+
+            <SwipeProfileDeck profiles={users.slice(0, 8)} />
+          </section>
+        )}
+
+        {/* View All Registered People Section Header */}
+        <div id="all-registered-people" className="scroll-mt-20 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="font-display font-bold text-xl sm:text-2xl text-slate-900">
+                View All Registered People
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                Explore the complete verified network by industry, capabilities, and country.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Prominent Search Bar */}
