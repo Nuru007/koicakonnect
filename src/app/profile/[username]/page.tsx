@@ -6,7 +6,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserProfile, ProfessionalLink } from '@/lib/types';
-import { QRCard } from '@/components/QRCard';
 import { translateProfileText } from '@/lib/translations';
 import {
   MapPin,
@@ -380,14 +379,14 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
-        {/* Profile Content Grid: Left Column Details + Right Column QR Card */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Profile Content Grid: Balanced 2-Column Professional Identity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           
-          {/* Main Info Columns (2 spans) */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Left Column: Bio & Languages */}
+          <div className="space-y-6">
             
             {/* Bio / About */}
-            <div className="glass-card rounded-3xl p-7 border border-slate-200/80 bg-white/95 shadow-sm">
+            <div className="glass-card rounded-3xl p-7 sm:p-8 border border-slate-200/80 bg-white/95 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-display font-bold text-lg text-slate-900">
                   {t.profile.aboutTitle}
@@ -403,8 +402,37 @@ export default function PublicProfilePage() {
               </p>
             </div>
 
+            {/* Languages */}
+            <div className="glass-card rounded-3xl p-7 sm:p-8 border border-slate-200/80 bg-white/95 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Globe className="w-5 h-5 text-slate-700" />
+                <h3 className="font-display font-bold text-lg text-slate-900">
+                  {t.profile.languagesTitle}
+                </h3>
+              </div>
+              {profile.languages.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.languages.map((lang) => (
+                    <span
+                      key={lang.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700"
+                    >
+                      <span>{lang.name}</span>
+                      <span className="text-[10px] text-slate-400">({lang.code.toUpperCase()})</span>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 italic">English (Default)</p>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Skills & Interests */}
+          <div className="space-y-6">
+            
             {/* Skills (What they can do) */}
-            <div className="glass-card rounded-3xl p-7 border border-slate-200/80 bg-white/95 shadow-sm">
+            <div className="glass-card rounded-3xl p-7 sm:p-8 border border-slate-200/80 bg-white/95 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Award className="w-5 h-5 text-brand-500" />
                 <h3 className="font-display font-bold text-lg text-slate-900">
@@ -419,7 +447,7 @@ export default function PublicProfilePage() {
                   {profile.skills.map((skill) => (
                     <span
                       key={skill.id}
-                      className="badge-pill text-xs py-1 px-3 bg-brand-50 text-brand-700 font-semibold"
+                      className="badge-pill text-xs py-1.5 px-3 bg-brand-50 text-brand-700 font-semibold"
                     >
                       {skill.name}
                     </span>
@@ -431,7 +459,7 @@ export default function PublicProfilePage() {
             </div>
 
             {/* Areas of Interest (What they care about) */}
-            <div className="glass-card rounded-3xl p-7 border border-slate-200/80 bg-white/95 shadow-sm">
+            <div className="glass-card rounded-3xl p-7 sm:p-8 border border-slate-200/80 bg-white/95 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-cyan-500" />
                 <h3 className="font-display font-bold text-lg text-slate-900">
@@ -446,7 +474,7 @@ export default function PublicProfilePage() {
                   {profile.interests.map((interest) => (
                     <span
                       key={interest.id}
-                      className="badge-pill badge-interest text-xs py-1 px-3"
+                      className="badge-pill badge-interest text-xs py-1.5 px-3"
                     >
                       {interest.name}
                     </span>
@@ -455,44 +483,6 @@ export default function PublicProfilePage() {
               ) : (
                 <p className="text-xs text-slate-400 italic">No areas of interest listed yet.</p>
               )}
-            </div>
-
-            {/* Languages */}
-            <div className="glass-card rounded-3xl p-7 border border-slate-200/80 bg-white/95 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Globe className="w-5 h-5 text-slate-700" />
-                <h3 className="font-display font-bold text-lg text-slate-900">
-                  {t.profile.languagesTitle}
-                </h3>
-              </div>
-              {profile.languages.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {profile.languages.map((lang) => (
-                    <span
-                      key={lang.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700"
-                    >
-                      <span>{lang.name}</span>
-                      <span className="text-[10px] text-slate-400">({lang.code.toUpperCase()})</span>
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-400 italic">English (Default)</p>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column: QR Digital Identity Card */}
-          <div className="lg:col-span-1 space-y-6 sticky top-24">
-            <div className="glass-card rounded-3xl p-6 border border-brand-200/60 bg-white/95 shadow-sm">
-              <h3 className="font-display font-bold text-base text-slate-900 mb-1">
-                {t.profile.qrTitle}
-              </h3>
-              <p className="text-xs text-slate-500 mb-6">
-                {t.profile.qrDesc}
-              </p>
-              <QRCard profile={profile} compact />
             </div>
           </div>
 
