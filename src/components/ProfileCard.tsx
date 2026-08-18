@@ -16,6 +16,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
   const { user: currentUser } = useAuth();
 
   const isOwnCard = currentUser?.id === profile.id || currentUser?.username === profile.username;
+  const profileHref = profile.username ? `/profile/${profile.username}` : `/profile/${profile.id}`;
 
   const getInitials = (name: string) => {
     const parts = (name || '').trim().split(/\s+/);
@@ -23,9 +24,21 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
     return (name || 'U').slice(0, 2).toUpperCase();
   };
 
+  const locationText = (() => {
+    const city = profile.city?.trim();
+    const country = profile.country?.trim();
+    if (city && country) {
+      if (city.toLowerCase().includes(country.toLowerCase())) return city;
+      return `${city}, ${country}`;
+    }
+    return city || country;
+  })();
+
   return (
-    <div className="glass-card glass-card-hover rounded-2xl p-6 flex flex-col justify-between relative group border border-slate-200/80 bg-white/95">
-      
+    <Link
+      href={profileHref}
+      className="glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between relative group border border-slate-200/80 hover:border-brand-500/80 bg-white/95 cursor-pointer block transition-all shadow-sm hover:shadow-xl hover:shadow-brand-500/10"
+    >
       {/* Top Header: Avatar & Main Identifiers */}
       <div>
         <div className="flex items-start gap-4 mb-4">
@@ -34,12 +47,12 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
               <img
                 src={profile.profileImage}
                 alt={profile.name}
-                className="w-16 h-16 rounded-2xl object-cover ring-2 ring-brand-100 shadow-sm group-hover:ring-brand-400 transition-all"
+                className="w-16 h-16 rounded-2xl object-cover ring-2 ring-brand-100 shadow-sm group-hover:ring-brand-500 group-hover:scale-105 transition-all duration-300"
               />
-              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white" title="Verified Profile" />
+              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white shadow-2xs" title="Verified Profile" />
             </div>
           ) : (
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-400 text-white flex items-center justify-center font-display font-bold text-lg shadow-brand-sm">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-400 text-white flex items-center justify-center font-display font-bold text-lg shadow-brand-sm group-hover:scale-105 transition-transform duration-300">
               {getInitials(profile.name)}
             </div>
           )}
@@ -67,12 +80,10 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
               </p>
             )}
 
-            {(profile.country || profile.city) && (
+            {locationText && (
               <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1 truncate">
                 <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                <span className="truncate">
-                  {[profile.city, profile.country].filter(Boolean).join(', ')}
-                </span>
+                <span className="truncate">{locationText}</span>
               </div>
             )}
           </div>
@@ -80,7 +91,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
 
         {/* Bio preview if available */}
         {profile.bio && (
-          <p className="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+          <p className="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed bg-slate-50/70 p-2.5 rounded-xl border border-slate-100 group-hover:border-brand-100 transition-colors">
             {profile.bio}
           </p>
         )}
@@ -91,7 +102,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
             {profile.categories.slice(0, 2).map((cat) => (
               <span
                 key={cat.id}
-                className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200"
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 group-hover:border-brand-200 transition-colors"
               >
                 {cat.name}
               </span>
@@ -153,7 +164,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
         )}
       </div>
 
-      {/* Card Footer: Languages & Socials & CTA */}
+      {/* Card Footer: Languages & Socials */}
       <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 mt-2">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 text-[11px] text-slate-500">
@@ -166,30 +177,27 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
           </div>
 
           {profile.links?.find((l) => l.platform === 'linkedin' && l.url) && (
-            <a
-              href={(() => {
-                const url = profile.links.find((l) => l.platform === 'linkedin')?.url || '';
-                return url.startsWith('http') ? url : `https://${url}`;
-              })()}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const rawUrl = profile.links.find((l) => l.platform === 'linkedin')?.url || '';
+                const url = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+                window.open(url, '_blank', 'noopener,noreferrer');
+              }}
               className="p-1 rounded-md text-slate-400 hover:text-[#0A66C2] hover:bg-slate-100 transition-colors"
               title="LinkedIn Profile"
-              onClick={(e) => e.stopPropagation()}
             >
               <Linkedin className="w-3.5 h-3.5 fill-current" />
-            </a>
+            </button>
           )}
         </div>
 
-        <Link
-          href={`/profile/${profile.username}`}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-50 hover:bg-brand-500 text-brand-600 hover:text-white text-xs font-bold transition-all shadow-sm group/btn"
-        >
-          <span>{t.discover.viewProfile}</span>
-          <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
-        </Link>
+        <div className="flex items-center gap-1 text-slate-400 group-hover:text-brand-600 transition-colors">
+          <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        </div>
       </div>
-    </div>
+    </Link>
   );
 };
