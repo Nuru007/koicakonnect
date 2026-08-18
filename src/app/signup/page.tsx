@@ -180,8 +180,10 @@ export default function SignUpPage() {
                   }`}
                 />
               </div>
-              {!isEmailValid && (
+              {!isEmailValid ? (
                 <p className="text-[11px] text-rose-500 mt-1 font-medium">Please enter a valid email.</p>
+              ) : (
+                <p className="text-[10px] text-slate-400 mt-1">Stored securely in your verified Supabase account.</p>
               )}
             </div>
 

@@ -581,7 +581,7 @@ export default function ProfileEditPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                     Full Name *
@@ -610,6 +610,20 @@ export default function ProfileEditPage() {
                       className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:border-brand-500"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center justify-between">
+                    <span>Account Email</span>
+                    <span className="text-[10px] text-emerald-600 font-bold">Verified</span>
+                  </label>
+                  <input
+                    type="email"
+                    disabled
+                    value={user?.email || ''}
+                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-medium text-slate-500 cursor-not-allowed"
+                    title="Account email stored in Supabase"
+                  />
                 </div>
               </div>
 
