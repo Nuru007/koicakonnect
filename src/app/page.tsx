@@ -197,12 +197,12 @@ export default function HomePage() {
             <Compass className="w-5 h-5" />
             <span>Explore the Cohort</span>
           </Link>
-          <a
-            href="#how-it-works"
+          <Link
+            href="/signup"
             className="btn-secondary w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl text-sm sm:text-base font-bold inline-flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] transition-all"
           >
-            <span>How It Works</span>
-          </a>
+            <span>Create Profile</span>
+          </Link>
         </div>
 
         {/* Hero Search Bar */}
