@@ -143,61 +143,72 @@ interface FloatingFlagsProps {
 
 export const FloatingFlags: React.FC<FloatingFlagsProps> = ({ mousePos }) => {
   const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   if (!mounted) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
-      {FLAGS.map((flag) => {
-        const config = isMobile ? flag.mobile : flag.desktop;
-        
-        // Calculate smooth cursor parallax offset (desktop only)
-        const parallaxX = isMobile ? 0 : mousePos.x * flag.desktop.depth * 30;
-        const parallaxY = isMobile ? 0 : mousePos.y * flag.desktop.depth * 30;
-
-        return (
+    <>
+      {/* Mobile / Tablet Flag Row: Clean, inline, never overlaps text or buttons */}
+      <div className="flex lg:hidden items-center justify-center gap-2 sm:gap-3 mb-6 relative z-20 animate-in fade-in duration-700">
+        {FLAGS.map((flag) => (
           <div
             key={flag.id}
-            className={`absolute transition-transform duration-300 ease-out ${config.animClass}`}
-            style={{
-              top: config.top,
-              bottom: config.bottom,
-              left: config.left === '50%' ? '50%' : config.left,
-              right: config.right,
-              transform: `translate3d(${parallaxX}px, ${parallaxY}px, 0) rotate(${config.rotation}deg) scale(${config.scale || 1}) ${
-                config.left === '50%' ? 'translateX(-50%)' : ''
-              }`,
-              animationDelay: flag.desktop.delay,
-            }}
+            className="w-10 sm:w-12 h-6 sm:h-7.5 rounded-lg overflow-hidden shadow-sm border border-slate-200/90 hover:scale-110 transition-transform cursor-pointer"
+            title={flag.name}
           >
-            {/* Pure Floating Flag with Soft 3D Shadow */}
+            <img
+              src={flag.src}
+              alt={`${flag.name} Flag`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Floating 3D Flags: Positioned in spacious outer margins with parallax */}
+      <div className="hidden lg:block absolute inset-0 pointer-events-none overflow-hidden z-10">
+        {FLAGS.map((flag) => {
+          const config = flag.desktop;
+          
+          // Calculate smooth cursor parallax offset (desktop only)
+          const parallaxX = mousePos.x * config.depth * 30;
+          const parallaxY = mousePos.y * config.depth * 30;
+
+          return (
             <div
-              className="pointer-events-auto w-14 sm:w-20 md:w-24 lg:w-28 h-9 sm:h-13 md:h-16 lg:h-18 rounded-xl sm:rounded-2xl lg:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-110 group cursor-default"
+              key={flag.id}
+              className={`absolute transition-transform duration-300 ease-out ${config.animClass}`}
               style={{
-                boxShadow:
-                  '0 20px 40px -8px rgba(0, 114, 254, 0.26), 0 10px 20px -4px rgba(15, 23, 42, 0.14), 0 0 1px rgba(0,0,0,0.15)',
+                top: config.top,
+                bottom: config.bottom,
+                left: config.left,
+                right: config.right,
+                transform: `translate3d(${parallaxX}px, ${parallaxY}px, 0) rotate(${config.rotation}deg)`,
+                animationDelay: config.delay,
               }}
             >
-              <img
-                src={flag.src}
-                alt={`${flag.name} Flag`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              {/* Pure Floating Flag with Soft 3D Shadow */}
+              <div
+                className="pointer-events-auto w-24 lg:w-28 h-16 lg:h-18 rounded-2xl lg:rounded-3xl overflow-hidden transition-all duration-300 hover:scale-110 group cursor-default"
+                style={{
+                  boxShadow:
+                    '0 20px 40px -8px rgba(0, 114, 254, 0.26), 0 10px 20px -4px rgba(15, 23, 42, 0.14), 0 0 1px rgba(0,0,0,0.15)',
+                }}
+              >
+                <img
+                  src={flag.src}
+                  alt={`${flag.name} Flag`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </>
   );
 };

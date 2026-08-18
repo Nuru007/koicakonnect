@@ -8,6 +8,8 @@ import { Footer } from '@/components/Footer';
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
 };
 
 export const metadata: Metadata = {
@@ -32,12 +34,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="antialiased flex flex-col min-h-screen selection:bg-brand-500 selection:text-white bg-[#FAFBFF]">
+    <html lang="en" className="overflow-x-hidden w-full max-w-[100vw]">
+      <body className="antialiased flex flex-col min-h-screen selection:bg-brand-500 selection:text-white bg-[#FAFBFF] overflow-x-hidden w-full max-w-[100vw]">
         <LanguageProvider>
           <AuthProvider>
             <Navbar />
-            <main className="flex-1 relative flex flex-col">
+            <main className="flex-1 relative flex flex-col w-full overflow-x-hidden">
               {children}
             </main>
             <Footer />

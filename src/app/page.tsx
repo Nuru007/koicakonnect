@@ -435,18 +435,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Official KOICA Partner Logo Badge at Bottom Right */}
-      <aside aria-label="Official Partner" className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-brand-md hover:shadow-brand-lg transition-all hover:scale-105 group pointer-events-auto">
+      {/* Official KOICA Partner Logo Badge at Bottom Right (Desktop only to prevent mobile clutter) */}
+      <aside aria-label="Official Partner" className="hidden md:flex fixed bottom-6 right-6 z-40 items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-brand-md hover:shadow-brand-lg transition-all hover:scale-105 group pointer-events-auto">
         <img
           src="/koica-logo.png"
           alt="KOICA"
-          className="h-4 sm:h-6 w-auto object-contain transition-transform group-hover:scale-105"
+          className="h-6 w-auto object-contain transition-transform group-hover:scale-105"
         />
-        <div className="flex flex-col text-left border-l border-slate-200 pl-2 sm:pl-2.5">
-          <span className="text-[10px] sm:text-[11px] font-bold text-slate-900 tracking-tight leading-none">
+        <div className="flex flex-col text-left border-l border-slate-200 pl-2.5">
+          <span className="text-[11px] font-bold text-slate-900 tracking-tight leading-none">
             KOICA
           </span>
-          <span className="text-[8px] sm:text-[9px] font-medium text-slate-400 leading-none mt-0.5 sm:mt-1">
+          <span className="text-[9px] font-medium text-slate-400 leading-none mt-1">
             Youth Leaders Program
           </span>
         </div>
