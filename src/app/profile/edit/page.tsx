@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -40,7 +40,10 @@ export default function ProfileEditPage() {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
+  // Guard to ensure initial state from DB is only populated once per user session
+  const loadedUserIdRef = useRef<string | null>(null);
+
+  // Step 1: Basic Information
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [role, setRole] = useState('');
@@ -48,24 +51,34 @@ export default function ProfileEditPage() {
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
   const [profileImage, setProfileImage] = useState('');
+
+  // Step 2: About & Bio
   const [bio, setBio] = useState('');
   const [preferredLanguage, setPreferredLanguage] = useState('en');
-  const [status, setStatus] = useState<'draft' | 'published' | 'private'>('draft');
 
-  // Relational items
+  // Step 3: Categories
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+
+  // Step 4: Skills
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [customSkillInput, setCustomSkillInput] = useState('');
+
+  // Step 5: Interests
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [customInterestInput, setCustomInterestInput] = useState('');
+
+  // Step 6: Languages
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
 
-  // Links
+  // Step 7: Professional Links
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState('');
   const [otherUrl, setOtherUrl] = useState('');
+
+  // Status
+  const [status, setStatus] = useState<'draft' | 'published' | 'private'>('draft');
 
   // Taxonomies from DB
   const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
@@ -81,9 +94,10 @@ export default function ProfileEditPage() {
     'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80',
   ];
 
-  // Populate data when user loads
+  // Populate data when user initially loads (only once per user ID to prevent wiping active edits)
   useEffect(() => {
-    if (user) {
+    if (user && loadedUserIdRef.current !== user.id) {
+      loadedUserIdRef.current = user.id;
       setName(user.name || '');
       setUsername(user.username || '');
       setRole(user.role || '');
@@ -95,20 +109,20 @@ export default function ProfileEditPage() {
       setPreferredLanguage(user.preferredLanguage || 'en');
       setStatus(user.status || 'draft');
 
-      if (user.categories) {
+      if (user.categories && user.categories.length > 0) {
         setSelectedCategoryIds(user.categories.map((c) => c.id));
       }
-      if (user.skills) {
+      if (user.skills && user.skills.length > 0) {
         setSelectedSkills(user.skills.map((s) => s.name));
       }
-      if (user.interests) {
+      if (user.interests && user.interests.length > 0) {
         setSelectedInterests(user.interests.map((i) => i.name));
       }
-      if (user.languages) {
+      if (user.languages && user.languages.length > 0) {
         setSelectedLanguages(user.languages.map((l) => l.code));
       }
 
-      if (user.links) {
+      if (user.links && user.links.length > 0) {
         const li = user.links.find((l) => l.platform === 'linkedin');
         const web = user.links.find((l) => l.platform === 'website');
         const gh = user.links.find((l) => l.platform === 'github');
@@ -190,7 +204,7 @@ export default function ProfileEditPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = async (newStatus?: 'draft' | 'published' | 'private') => {
+  const handleSave = async (newStatus?: 'draft' | 'published' | 'private'): Promise<boolean> => {
     setError(null);
     setSavedSuccess(false);
 
@@ -201,12 +215,12 @@ export default function ProfileEditPage() {
       if (!name || !name.trim()) {
         setError('Please provide your Full Name in Step 1 before publishing.');
         setActiveStep(1);
-        return;
+        return false;
       }
       if (!role || !role.trim()) {
         setError('Please provide your Current Role / Profession in Step 1 before publishing.');
         setActiveStep(1);
-        return;
+        return false;
       }
     }
 
@@ -244,16 +258,22 @@ export default function ProfileEditPage() {
       });
 
       const data = await res.json();
-      if (res.ok && data.success) {
-        if (newStatus) setStatus(newStatus);
+      const updatedProfile = data.data?.profile || data.profile;
+
+      if (res.ok && data.success && updatedProfile) {
+        setStatus(updatedProfile.status || targetStatus);
         setSavedSuccess(true);
         await refreshUser();
         setTimeout(() => setSavedSuccess(false), 4000);
+        return true;
       } else {
-        setError(data.error?.message || data.error || 'Failed to save changes. Please try again.');
+        const errorMsg = data.error?.message || data.error || 'Failed to save changes. Please try again.';
+        setError(errorMsg);
+        return false;
       }
     } catch (err: any) {
       setError(err.message || 'Network error. Your changes have not been lost, please try again.');
+      return false;
     } finally {
       setSaving(false);
     }
@@ -1064,13 +1084,16 @@ export default function ProfileEditPage() {
             {activeStep < 8 ? (
               <button
                 type="button"
-                onClick={() => {
-                  handleSave();
-                  setActiveStep(prev => prev + 1);
+                disabled={saving}
+                onClick={async () => {
+                  const success = await handleSave();
+                  if (success !== false) {
+                    setActiveStep(prev => prev + 1);
+                  }
                 }}
-                className="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-brand-sm"
+                className="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-brand-sm disabled:opacity-50"
               >
-                <span>Save & Continue</span>
+                <span>{saving ? 'Saving...' : 'Save & Continue'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             ) : (

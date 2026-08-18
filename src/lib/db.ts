@@ -534,106 +534,155 @@ class DatabaseManager {
     if (data.isDeactivated !== undefined) updates.is_deactivated = data.isDeactivated;
     if (data.passwordHash !== undefined) updates.password_hash = data.passwordHash;
 
-    const { error: userUpdateError } = await supabase
+    const { data: updatedRows, error: userUpdateError } = await supabase
       .from('users')
       .update(updates)
-      .eq('id', userId);
+      .eq('id', userId)
+      .select();
 
     if (userUpdateError) {
       throw new Error(`Failed to update profile: ${userUpdateError.message}`);
     }
+    if (!updatedRows || updatedRows.length === 0) {
+      throw new Error(`No user row matched ID ${userId} for update`);
+    }
 
     // Synchronize categories
-    if (relations?.categoryIds) {
-      await supabase.from('user_categories').delete().eq('user_id', userId);
-      const categories = await this.getCategories();
-      const rowsToInsert: { user_id: string; category_id: string }[] = [];
-
-      for (const catId of relations.categoryIds) {
-        const found = categories.find(c => c.id === catId || c.slug === catId);
-        if (found) {
-          rowsToInsert.push({ user_id: userId, category_id: found.id });
-        }
+    if (relations?.categoryIds !== undefined) {
+      const { error: delCatErr } = await supabase.from('user_categories').delete().eq('user_id', userId);
+      if (delCatErr) {
+        throw new Error(`Failed to update categories: ${delCatErr.message}`);
       }
-      if (rowsToInsert.length > 0) {
-        await supabase.from('user_categories').insert(rowsToInsert);
+
+      if (relations.categoryIds && relations.categoryIds.length > 0) {
+        const categories = await this.getCategories();
+        const rowsToInsert: { user_id: string; category_id: string }[] = [];
+
+        for (const catId of relations.categoryIds) {
+          const found = categories.find(c => c.id === catId || c.slug === catId);
+          if (found) {
+            rowsToInsert.push({ user_id: userId, category_id: found.id });
+          }
+        }
+        if (rowsToInsert.length > 0) {
+          const { error: insCatErr } = await supabase.from('user_categories').insert(rowsToInsert);
+          if (insCatErr) {
+            throw new Error(`Failed to insert categories: ${insCatErr.message}`);
+          }
+        }
       }
     }
 
     // Synchronize skills
-    if (relations?.skills) {
-      await supabase.from('user_skills').delete().eq('user_id', userId);
-      const rowsToInsert: { user_id: string; skill_id: string }[] = [];
+    if (relations?.skills !== undefined) {
+      const { error: delSkillErr } = await supabase.from('user_skills').delete().eq('user_id', userId);
+      if (delSkillErr) {
+        throw new Error(`Failed to update skills: ${delSkillErr.message}`);
+      }
 
-      for (const skillName of relations.skills) {
-        if (skillName.trim()) {
-          const skill = await this.getOrCreateSkill(skillName);
-          if (!rowsToInsert.some(r => r.skill_id === skill.id)) {
-            rowsToInsert.push({ user_id: userId, skill_id: skill.id });
+      if (relations.skills && relations.skills.length > 0) {
+        const rowsToInsert: { user_id: string; skill_id: string }[] = [];
+
+        for (const skillName of relations.skills) {
+          if (skillName.trim()) {
+            const skill = await this.getOrCreateSkill(skillName);
+            if (!rowsToInsert.some(r => r.skill_id === skill.id)) {
+              rowsToInsert.push({ user_id: userId, skill_id: skill.id });
+            }
           }
         }
-      }
-      if (rowsToInsert.length > 0) {
-        await supabase.from('user_skills').insert(rowsToInsert);
+        if (rowsToInsert.length > 0) {
+          const { error: insSkillErr } = await supabase.from('user_skills').insert(rowsToInsert);
+          if (insSkillErr) {
+            throw new Error(`Failed to insert skills: ${insSkillErr.message}`);
+          }
+        }
       }
     }
 
     // Synchronize interests
-    if (relations?.interests) {
-      await supabase.from('user_interests').delete().eq('user_id', userId);
-      const rowsToInsert: { user_id: string; interest_id: string }[] = [];
+    if (relations?.interests !== undefined) {
+      const { error: delIntErr } = await supabase.from('user_interests').delete().eq('user_id', userId);
+      if (delIntErr) {
+        throw new Error(`Failed to update interests: ${delIntErr.message}`);
+      }
 
-      for (const intName of relations.interests) {
-        if (intName.trim()) {
-          const interest = await this.getOrCreateInterest(intName);
-          if (!rowsToInsert.some(r => r.interest_id === interest.id)) {
-            rowsToInsert.push({ user_id: userId, interest_id: interest.id });
+      if (relations.interests && relations.interests.length > 0) {
+        const rowsToInsert: { user_id: string; interest_id: string }[] = [];
+
+        for (const intName of relations.interests) {
+          if (intName.trim()) {
+            const interest = await this.getOrCreateInterest(intName);
+            if (!rowsToInsert.some(r => r.interest_id === interest.id)) {
+              rowsToInsert.push({ user_id: userId, interest_id: interest.id });
+            }
           }
         }
-      }
-      if (rowsToInsert.length > 0) {
-        await supabase.from('user_interests').insert(rowsToInsert);
+        if (rowsToInsert.length > 0) {
+          const { error: insIntErr } = await supabase.from('user_interests').insert(rowsToInsert);
+          if (insIntErr) {
+            throw new Error(`Failed to insert interests: ${insIntErr.message}`);
+          }
+        }
       }
     }
 
     // Synchronize languages
-    if (relations?.languageCodes) {
-      await supabase.from('user_languages').delete().eq('user_id', userId);
-      const rowsToInsert: { user_id: string; language_id: string }[] = [];
+    if (relations?.languageCodes !== undefined) {
+      const { error: delLangErr } = await supabase.from('user_languages').delete().eq('user_id', userId);
+      if (delLangErr) {
+        throw new Error(`Failed to update languages: ${delLangErr.message}`);
+      }
 
-      for (const langCode of relations.languageCodes) {
-        if (langCode.trim()) {
-          const lang = await this.getOrCreateLanguage(langCode, langCode);
-          if (!rowsToInsert.some(r => r.language_id === lang.id)) {
-            rowsToInsert.push({ user_id: userId, language_id: lang.id });
+      if (relations.languageCodes && relations.languageCodes.length > 0) {
+        const rowsToInsert: { user_id: string; language_id: string }[] = [];
+
+        for (const langCode of relations.languageCodes) {
+          if (langCode.trim()) {
+            const lang = await this.getOrCreateLanguage(langCode, langCode);
+            if (!rowsToInsert.some(r => r.language_id === lang.id)) {
+              rowsToInsert.push({ user_id: userId, language_id: lang.id });
+            }
           }
         }
-      }
-      if (rowsToInsert.length > 0) {
-        await supabase.from('user_languages').insert(rowsToInsert);
+        if (rowsToInsert.length > 0) {
+          const { error: insLangErr } = await supabase.from('user_languages').insert(rowsToInsert);
+          if (insLangErr) {
+            throw new Error(`Failed to insert languages: ${insLangErr.message}`);
+          }
+        }
       }
     }
 
     // Synchronize professional links
-    if (relations?.links) {
-      await supabase.from('professional_links').delete().eq('user_id', userId);
-      const rowsToInsert = relations.links
-        .filter(link => link.url && link.url.trim())
-        .map(link => ({
-          id: link.id || `link_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          user_id: userId,
-          platform: link.platform,
-          url: link.url.trim(),
-          title: link.title || '',
-        }));
+    if (relations?.links !== undefined) {
+      const { error: delLinksErr } = await supabase.from('professional_links').delete().eq('user_id', userId);
+      if (delLinksErr) {
+        throw new Error(`Failed to update professional links: ${delLinksErr.message}`);
+      }
 
-      if (rowsToInsert.length > 0) {
-        await supabase.from('professional_links').insert(rowsToInsert);
+      if (relations.links && relations.links.length > 0) {
+        const rowsToInsert = relations.links
+          .filter(link => link.url && link.url.trim())
+          .map(link => ({
+            id: link.id || `link_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            user_id: userId,
+            platform: link.platform,
+            url: link.url.trim(),
+            title: link.title || '',
+          }));
+
+        if (rowsToInsert.length > 0) {
+          const { error: insLinksErr } = await supabase.from('professional_links').insert(rowsToInsert);
+          if (insLinksErr) {
+            throw new Error(`Failed to insert professional links: ${insLinksErr.message}`);
+          }
+        }
       }
     }
 
-    const updatedUser = await this.getUserById(userId);
-    const profile = await this.assembleUserProfile(updatedUser!);
+    const updatedUser = mapUserRowToUser(updatedRows[0]);
+    const profile = await this.assembleUserProfile(updatedUser);
     return sanitizeSessionUser(profile);
   }
 

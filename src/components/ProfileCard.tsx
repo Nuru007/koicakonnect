@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { UserProfile } from '@/lib/types';
-import { MapPin, ArrowUpRight, Globe, Award, Sparkles } from 'lucide-react';
+import { MapPin, ArrowUpRight, Globe, Award, Sparkles, Linkedin } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 
@@ -153,15 +153,33 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
         )}
       </div>
 
-      {/* Card Footer: Languages & CTA */}
+      {/* Card Footer: Languages & Socials & CTA */}
       <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 mt-2">
-        <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-          <Globe className="w-3.5 h-3.5 text-slate-400" />
-          <span>
-            {profile.languages.length > 0
-              ? profile.languages.map((l) => l.code.toUpperCase()).join(', ')
-              : 'EN'}
-          </span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 text-[11px] text-slate-500">
+            <Globe className="w-3.5 h-3.5 text-slate-400" />
+            <span>
+              {profile.languages.length > 0
+                ? profile.languages.map((l) => l.code.toUpperCase()).join(', ')
+                : 'EN'}
+            </span>
+          </div>
+
+          {profile.links?.find((l) => l.platform === 'linkedin' && l.url) && (
+            <a
+              href={(() => {
+                const url = profile.links.find((l) => l.platform === 'linkedin')?.url || '';
+                return url.startsWith('http') ? url : `https://${url}`;
+              })()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1 rounded-md text-slate-400 hover:text-[#0A66C2] hover:bg-slate-100 transition-colors"
+              title="LinkedIn Profile"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Linkedin className="w-3.5 h-3.5 fill-current" />
+            </a>
+          )}
         </div>
 
         <Link
