@@ -54,7 +54,7 @@ export default function PublicProfilePage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/users/${username}`);
+        const res = await fetch(`/api/users/${username}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setProfile(data.profile);

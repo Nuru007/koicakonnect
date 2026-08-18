@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export async function GET(
   _req: NextRequest,
@@ -45,7 +47,7 @@ export async function GET(
       profile: publicProfile,
     });
 
-    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     return response;
   } catch (error: any) {
     console.error('Error fetching public user profile:', error);
