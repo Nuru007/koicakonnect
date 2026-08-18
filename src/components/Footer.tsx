@@ -27,15 +27,11 @@ export const Footer: React.FC = () => {
               Discover people before you network with them. The global discovery and professional identity layer connecting talent with opportunities worldwide.
             </p>
             <div className="pt-2 flex flex-wrap items-center gap-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-50 border border-slate-200 shadow-2xs">
-                <img
-                  src="/koica-logo.png"
-                  alt="KOICA"
-                  className="h-4.5 w-auto object-contain"
-                />
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 shadow-2xs">
+                <span className="font-display font-black text-xs text-brand-600 tracking-tight">KOICA</span>
                 <span className="text-[11px] font-semibold text-slate-700">Youth Leaders Program</span>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 Live Discovery Engine
               </span>
