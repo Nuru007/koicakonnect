@@ -9,28 +9,22 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
 
-    // Get current authenticated user session if present
     const session = await getSessionFromRequest(req);
 
     const query = searchParams.get('q') || undefined;
     
-    // Parse category filters
     const categoryParam = searchParams.get('category');
     const categorySlugs = categoryParam ? categoryParam.split(',').map(s => s.trim()).filter(Boolean) : undefined;
 
-    // Parse skill filters
     const skillParam = searchParams.get('skill');
     const skillNames = skillParam ? skillParam.split(',').map(s => s.trim()).filter(Boolean) : undefined;
 
-    // Parse interest filters
     const interestParam = searchParams.get('interest');
     const interestNames = interestParam ? interestParam.split(',').map(s => s.trim()).filter(Boolean) : undefined;
 
-    // Parse country filters
     const countryParam = searchParams.get('country');
     const countries = countryParam ? countryParam.split(',').map(s => s.trim()).filter(Boolean) : undefined;
 
-    // Parse language filters
     const languageParam = searchParams.get('language');
     const languageCodes = languageParam ? languageParam.split(',').map(s => s.trim()).filter(Boolean) : undefined;
 
@@ -50,14 +44,30 @@ export async function GET(req: NextRequest) {
       limit,
     };
 
-    // Execute real database query
+    // Execute real database query strictly returning published, discoverable, active users
     const results = await db.getPublishedUsers(filters);
 
-    return NextResponse.json(results);
+    const response = NextResponse.json({
+      success: true,
+      data: results,
+      users: results.users,
+      total: results.total,
+      page: results.page,
+      totalPages: results.totalPages,
+    });
+
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    return response;
   } catch (error: any) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
-      { error: 'Failed to retrieve discovery results' },
+      {
+        success: false,
+        error: {
+          code: 'DISCOVER_FETCH_FAILED',
+          message: 'Failed to retrieve discovery results. Please try again.',
+        },
+      },
       { status: 500 }
     );
   }

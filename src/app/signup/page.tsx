@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { Sparkles, Mail, Lock, User, Briefcase, MapPin, ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Sparkles, Mail, Lock, User, Briefcase, MapPin, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function SignUpPage() {
   const { register } = useAuth();
@@ -25,24 +25,48 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailValid = formData.email.trim() === '' || emailRegex.test(formData.email.trim());
+  const isPasswordLongEnough = formData.password.length >= 8;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    if (error) {
+      setError(null);
+      setErrorCode(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+    setErrorCode(null);
 
+    if (!emailRegex.test(formData.email.trim())) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+
+    setLoading(true);
     const res = await register(formData);
-    setLoading(false);
 
     if (res.success) {
-      // Guide user into profile editor/builder
-      router.push('/profile/edit');
+      setSuccessMsg('Your account has been created. Directing you to the Profile Builder...');
+      setTimeout(() => {
+        router.push('/profile/edit');
+      }, 1200);
     } else {
-      setError(res.error || 'Failed to create profile');
+      setLoading(false);
+      setError(res.error || 'Unable to create account. Please try again.');
+      setErrorCode(res.code || null);
     }
   };
 
@@ -68,12 +92,43 @@ export default function SignUpPage() {
             Create Your Profile
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-            Join the global discovery platform and create your unique digital identity card.
+            Join the discovery network and create your digital professional identity card.
           </p>
         </div>
 
-        {error && (
-          <div className="mb-6 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+        {/* Success Banner */}
+        {successMsg && (
+          <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-3 animate-in fade-in duration-300">
+            <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600" />
+            <div>
+              <p className="font-bold">{successMsg}</p>
+              <p className="text-[11px] text-emerald-600 font-normal mt-0.5">Complete your profile to appear on Discover.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Duplicate Email Error Banner */}
+        {errorCode === 'EMAIL_ALREADY_EXISTS' && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600" />
+              <div>
+                <p className="font-bold">An account already exists with this email.</p>
+                <p className="text-[11px] text-amber-700">Would you like to sign in instead?</p>
+              </div>
+            </div>
+            <Link
+              href="/signin"
+              className="btn-primary py-1.5 px-3.5 rounded-xl text-xs font-bold whitespace-nowrap text-center"
+            >
+              Sign In Instead
+            </Link>
+          </div>
+        )}
+
+        {/* General Error Banner */}
+        {error && errorCode !== 'EMAIL_ALREADY_EXISTS' && (
+          <div className="mb-6 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
             <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
             <span>{error}</span>
           </div>
@@ -118,14 +173,24 @@ export default function SignUpPage() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="name@company.com"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
+                  className={`w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-4 transition-all ${
+                    !isEmailValid
+                      ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10'
+                      : 'border-slate-200 focus:border-brand-500 focus:ring-brand-500/10'
+                  }`}
                 />
               </div>
+              {!isEmailValid && (
+                <p className="text-[11px] text-rose-500 mt-1 font-medium">Please enter a valid email.</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Password *
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex justify-between">
+                <span>Password *</span>
+                <span className={`text-[10px] font-normal lowercase ${formData.password.length >= 8 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                  (min 8 chars)
+                </span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -137,7 +202,7 @@ export default function SignUpPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Min 6 chars"
+                  placeholder="Min 8 characters"
                   className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                 />
                 <button
@@ -155,7 +220,7 @@ export default function SignUpPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Current Role / Profession
+                Current Role / Profession *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -163,6 +228,7 @@ export default function SignUpPage() {
                 </div>
                 <input
                   type="text"
+                  required
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
@@ -225,11 +291,13 @@ export default function SignUpPage() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full btn-primary py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-brand-md mt-4 disabled:opacity-50"
+            disabled={loading || Boolean(successMsg)}
+            className="w-full btn-primary py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-brand-md mt-4 disabled:opacity-50 transition-all"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : successMsg ? (
+              <span>Redirecting to Profile Builder...</span>
             ) : (
               <>
                 <span>Continue to Profile Builder</span>

@@ -191,9 +191,26 @@ export default function ProfileEditPage() {
   };
 
   const handleSave = async (newStatus?: 'draft' | 'published' | 'private') => {
-    setSaving(true);
     setError(null);
     setSavedSuccess(false);
+
+    const targetStatus = newStatus || status;
+
+    // Client-side validation before publishing
+    if (targetStatus === 'published') {
+      if (!name || !name.trim()) {
+        setError('Please provide your Full Name in Step 1 before publishing.');
+        setActiveStep(1);
+        return;
+      }
+      if (!role || !role.trim()) {
+        setError('Please provide your Current Role / Profession in Step 1 before publishing.');
+        setActiveStep(1);
+        return;
+      }
+    }
+
+    setSaving(true);
 
     try {
       const linksPayload: ProfessionalLink[] = [];
@@ -202,8 +219,6 @@ export default function ProfileEditPage() {
       if (githubUrl.trim()) linksPayload.push({ platform: 'github', url: githubUrl.trim() });
       if (portfolioUrl.trim()) linksPayload.push({ platform: 'portfolio', url: portfolioUrl.trim() });
       if (otherUrl.trim()) linksPayload.push({ platform: 'other', url: otherUrl.trim() });
-
-      const currentStatus = newStatus || status;
 
       const res = await fetch('/api/profile', {
         method: 'PUT',
@@ -218,7 +233,8 @@ export default function ProfileEditPage() {
           profileImage,
           bio,
           preferredLanguage,
-          status: currentStatus,
+          status: targetStatus,
+          isDiscoverable: targetStatus === 'published',
           categoryIds: selectedCategoryIds,
           skills: selectedSkills,
           interests: selectedInterests,
@@ -232,12 +248,12 @@ export default function ProfileEditPage() {
         if (newStatus) setStatus(newStatus);
         setSavedSuccess(true);
         await refreshUser();
-        setTimeout(() => setSavedSuccess(false), 3000);
+        setTimeout(() => setSavedSuccess(false), 4000);
       } else {
-        setError(data.error || 'Failed to save changes');
+        setError(data.error?.message || data.error || 'Failed to save changes. Please try again.');
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to save changes');
+      setError(err.message || 'Network error. Your changes have not been lost, please try again.');
     } finally {
       setSaving(false);
     }
@@ -366,19 +382,67 @@ export default function ProfileEditPage() {
             {status === 'published' ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Published
+                Published & Live
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                Draft Mode
+                Draft (Private)
               </span>
             )}
           </div>
         </div>
 
+        {/* Visibility State Explainer Banner */}
+        <div className={`mb-6 p-4 rounded-2xl text-xs font-medium flex items-center justify-between gap-3 border ${
+          status === 'published'
+            ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+            : 'bg-amber-50/80 border-amber-200 text-amber-900'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+            <div>
+              <p className="font-bold text-xs">
+                {status === 'published' ? 'Your profile is live' : 'Your profile is private'}
+              </p>
+              <p className="text-[11px] opacity-80 mt-0.5">
+                {status === 'published'
+                  ? 'People can now discover your profile on Koica Connect.'
+                  : 'Complete your profile and publish it to appear on Discover.'}
+              </p>
+            </div>
+          </div>
+          {status !== 'published' ? (
+            <button
+              onClick={() => setActiveStep(8)}
+              className="btn-primary py-1.5 px-3 rounded-xl text-xs font-bold whitespace-nowrap"
+            >
+              Publish Now
+            </button>
+          ) : (
+            <Link
+              href={`/profile/${username || user?.username}`}
+              className="btn-secondary py-1.5 px-3 rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-1"
+            >
+              <span>View Live Profile</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          )}
+        </div>
+
+        {savedSuccess && (
+          <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>
+              {status === 'published'
+                ? 'Profile published successfully! Your profile is now live on Discover.'
+                : 'Profile draft saved successfully.'}
+            </span>
+          </div>
+        )}
+
         {error && (
           <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
             <span>{error}</span>
           </div>
         )}

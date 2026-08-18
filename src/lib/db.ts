@@ -10,6 +10,7 @@ import {
   SearchFilters, 
   SearchResult 
 } from './types';
+import { generateResetToken, hashResetToken, logDevResetLink } from './auth';
 
 function slugify(text: string): string {
   return text
@@ -20,7 +21,38 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-async function uploadAvatarIfBase64(userId: string, base64Data: string): Promise<string> {
+export function sanitizePublicProfile(profile: UserProfile): UserProfile {
+  return {
+    id: profile.id,
+    name: profile.name,
+    username: profile.username,
+    role: profile.role,
+    organisation: profile.organisation,
+    country: profile.country,
+    city: profile.city,
+    bio: profile.bio,
+    profileImage: profile.profileImage,
+    preferredLanguage: profile.preferredLanguage,
+    status: profile.status,
+    email: '', // Never expose raw email in public discovery API
+    isDiscoverable: profile.isDiscoverable,
+    isProfileComplete: profile.isProfileComplete,
+    createdAt: profile.createdAt,
+    updatedAt: profile.updatedAt,
+    categories: profile.categories,
+    skills: profile.skills,
+    interests: profile.interests,
+    languages: profile.languages,
+    links: profile.links,
+  };
+}
+
+export function sanitizeSessionUser(profile: UserProfile): UserProfile {
+  const { passwordHash: _ignored, ...safe } = profile;
+  return safe as UserProfile;
+}
+
+async function uploadAvatarIfBase64(userId: string, base64Data: string, oldAvatarUrl?: string): Promise<string> {
   if (!base64Data || !base64Data.startsWith('data:image')) {
     return base64Data || '';
   }
@@ -34,11 +66,12 @@ async function uploadAvatarIfBase64(userId: string, base64Data: string): Promise
     const contentType = matches[1];
     const buffer = Buffer.from(matches[2], 'base64');
     const ext = contentType.includes('png') ? 'png' : 'jpg';
-    const filePath = `user_${userId}_avatar.${ext}`;
+    const newFileName = `user_${userId}_avatar_${Date.now()}.${ext}`;
 
+    // 1. Upload new image buffer to avatars bucket
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(filePath, buffer, {
+      .upload(newFileName, buffer, {
         contentType,
         upsert: true,
       });
@@ -50,9 +83,19 @@ async function uploadAvatarIfBase64(userId: string, base64Data: string): Promise
 
     const { data: publicUrlData } = supabase.storage
       .from('avatars')
-      .getPublicUrl(filePath);
+      .getPublicUrl(newFileName);
 
-    return publicUrlData.publicUrl;
+    const newUrl = publicUrlData.publicUrl;
+
+    // 2. Safe cleanup of old avatar asset if it exists and had a different filename
+    if (oldAvatarUrl && oldAvatarUrl.includes('/avatars/')) {
+      const oldFileName = oldAvatarUrl.split('/avatars/').pop()?.split('?')[0];
+      if (oldFileName && oldFileName !== newFileName) {
+        supabase.storage.from('avatars').remove([oldFileName]).catch(() => {});
+      }
+    }
+
+    return newUrl;
   } catch (err) {
     console.error('Error uploading avatar:', err);
     return base64Data;
@@ -246,7 +289,7 @@ class DatabaseManager {
   }
 
   // --- User Profile Aggregation ---
-  private async assembleUserProfile(user: User): Promise<UserProfile> {
+  public async assembleUserProfile(user: User): Promise<UserProfile> {
     const [categoriesRes, skillsRes, interestsRes, languagesRes, linksRes] = await Promise.all([
       supabase.from('user_categories').select('category:categories(*)').eq('user_id', user.id),
       supabase.from('user_skills').select('skill:skills(*)').eq('user_id', user.id),
@@ -279,10 +322,8 @@ class DatabaseManager {
       title: pl.title || '',
     }));
 
-    const { passwordHash: _ignored, ...safeUser } = user;
-
     return {
-      ...safeUser,
+      ...user,
       isProfileComplete: this.isProfileComplete(user),
       isDiscoverable: user.isDiscoverable !== false,
       categories,
@@ -299,7 +340,6 @@ class DatabaseManager {
       .from('users')
       .select('*')
       .eq('id', id)
-      .eq('is_deactivated', false)
       .single();
 
     if (error || !data) return null;
@@ -311,7 +351,6 @@ class DatabaseManager {
       .from('users')
       .select('*')
       .eq('email', email.toLowerCase().trim())
-      .eq('is_deactivated', false)
       .single();
 
     if (error || !data) return null;
@@ -324,12 +363,29 @@ class DatabaseManager {
       .from('users')
       .select('*')
       .eq('username', cleanUsername)
-      .eq('is_deactivated', false)
       .single();
 
     if (error || !data) return null;
     const user = mapUserRowToUser(data);
     return this.assembleUserProfile(user);
+  }
+
+  // Genuinely public-facing profile query (enforcing visibility state: returns 404 for draft/hidden/deactivated)
+  public async getPublicProfileByUsername(username: string): Promise<UserProfile | null> {
+    const cleanUsername = username.toLowerCase().trim();
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', cleanUsername)
+      .eq('is_deactivated', false)
+      .eq('status', 'published')
+      .eq('is_discoverable', true)
+      .single();
+
+    if (error || !data) return null;
+    const user = mapUserRowToUser(data);
+    const profile = await this.assembleUserProfile(user);
+    return sanitizePublicProfile(profile);
   }
 
   public async createUser(userData: {
@@ -352,7 +408,7 @@ class DatabaseManager {
 
     const existingEmail = await this.getUserByEmail(cleanEmail);
     if (existingEmail) {
-      throw new Error('Email already registered');
+      throw new Error('EMAIL_ALREADY_EXISTS');
     }
 
     let username = slugify(userData.username || userData.name);
@@ -364,7 +420,6 @@ class DatabaseManager {
         .from('users')
         .select('id')
         .eq('username', usernameAttempt)
-        .eq('is_deactivated', false)
         .single();
 
       if (!existingUser) {
@@ -396,7 +451,7 @@ class DatabaseManager {
       profile_image: profileImageUrl,
       preferred_language: userData.preferredLanguage || 'en',
       status: userData.status || 'draft',
-      is_discoverable: userData.isDiscoverable !== false,
+      is_discoverable: userData.status === 'published' ? (userData.isDiscoverable !== false) : false,
       is_deactivated: false,
       is_admin: Boolean(userData.isAdmin),
       created_at: now,
@@ -405,11 +460,15 @@ class DatabaseManager {
 
     const { error } = await supabase.from('users').insert(userRow);
     if (error) {
+      if (error.code === '23505') {
+        throw new Error('EMAIL_ALREADY_EXISTS');
+      }
       throw new Error(`Failed to create user: ${error.message}`);
     }
 
     const createdUser = mapUserRowToUser(userRow);
-    return this.assembleUserProfile(createdUser);
+    const profile = await this.assembleUserProfile(createdUser);
+    return sanitizeSessionUser(profile);
   }
 
   public async updateUserProfile(
@@ -425,7 +484,7 @@ class DatabaseManager {
   ): Promise<UserProfile> {
     const existing = await this.getUserById(userId);
     if (!existing) {
-      throw new Error('User not found');
+      throw new Error('USER_NOT_FOUND');
     }
 
     const updates: Record<string, any> = {
@@ -439,11 +498,10 @@ class DatabaseManager {
         .select('id')
         .eq('username', cleanUsername)
         .neq('id', userId)
-        .eq('is_deactivated', false)
         .single();
 
       if (taken) {
-        throw new Error('Username already taken');
+        throw new Error('USERNAME_TAKEN');
       }
       updates.username = cleanUsername;
     }
@@ -454,12 +512,25 @@ class DatabaseManager {
     if (data.country !== undefined) updates.country = data.country.trim();
     if (data.city !== undefined) updates.city = data.city.trim();
     if (data.bio !== undefined) updates.bio = data.bio.trim();
+    
     if (data.profileImage !== undefined) {
-      updates.profile_image = await uploadAvatarIfBase64(userId, data.profileImage.trim());
+      updates.profile_image = await uploadAvatarIfBase64(userId, data.profileImage.trim(), existing.profileImage);
     }
+    
     if (data.preferredLanguage !== undefined) updates.preferred_language = data.preferredLanguage.trim();
-    if (data.status !== undefined) updates.status = data.status;
-    if (data.isDiscoverable !== undefined) updates.is_discoverable = data.isDiscoverable;
+    
+    // Explicit visibility state transitions
+    if (data.status !== undefined) {
+      updates.status = data.status;
+      if (data.status === 'draft') {
+        updates.is_discoverable = false;
+      } else if (data.status === 'published') {
+        updates.is_discoverable = data.isDiscoverable !== false;
+      }
+    } else if (data.isDiscoverable !== undefined) {
+      updates.is_discoverable = data.isDiscoverable;
+    }
+
     if (data.isDeactivated !== undefined) updates.is_deactivated = data.isDeactivated;
     if (data.passwordHash !== undefined) updates.password_hash = data.passwordHash;
 
@@ -472,7 +543,7 @@ class DatabaseManager {
       throw new Error(`Failed to update profile: ${userUpdateError.message}`);
     }
 
-    // Update categories
+    // Synchronize categories
     if (relations?.categoryIds) {
       await supabase.from('user_categories').delete().eq('user_id', userId);
       const categories = await this.getCategories();
@@ -489,7 +560,7 @@ class DatabaseManager {
       }
     }
 
-    // Update skills
+    // Synchronize skills
     if (relations?.skills) {
       await supabase.from('user_skills').delete().eq('user_id', userId);
       const rowsToInsert: { user_id: string; skill_id: string }[] = [];
@@ -507,7 +578,7 @@ class DatabaseManager {
       }
     }
 
-    // Update interests
+    // Synchronize interests
     if (relations?.interests) {
       await supabase.from('user_interests').delete().eq('user_id', userId);
       const rowsToInsert: { user_id: string; interest_id: string }[] = [];
@@ -525,7 +596,7 @@ class DatabaseManager {
       }
     }
 
-    // Update languages
+    // Synchronize languages
     if (relations?.languageCodes) {
       await supabase.from('user_languages').delete().eq('user_id', userId);
       const rowsToInsert: { user_id: string; language_id: string }[] = [];
@@ -543,7 +614,7 @@ class DatabaseManager {
       }
     }
 
-    // Update professional links
+    // Synchronize professional links
     if (relations?.links) {
       await supabase.from('professional_links').delete().eq('user_id', userId);
       const rowsToInsert = relations.links
@@ -562,7 +633,8 @@ class DatabaseManager {
     }
 
     const updatedUser = await this.getUserById(userId);
-    return this.assembleUserProfile(updatedUser!);
+    const profile = await this.assembleUserProfile(updatedUser!);
+    return sanitizeSessionUser(profile);
   }
 
   public async deleteUser(userId: string): Promise<boolean> {
@@ -575,7 +647,8 @@ class DatabaseManager {
       .from('users')
       .update({
         is_deactivated: true,
-        status: 'private',
+        status: 'draft',
+        is_discoverable: false,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId);
@@ -583,9 +656,97 @@ class DatabaseManager {
     return !error;
   }
 
-  // --- Dynamic Search and Discovery ---
+  // --- Password Reset Operations ---
+  public async createPasswordReset(email: string): Promise<{ success: boolean; rawToken?: string; email?: string }> {
+    const user = await this.getUserByEmail(email);
+    if (!user || user.isDeactivated) {
+      // Return generic success to prevent email enumeration
+      return { success: true };
+    }
+
+    const { rawToken, hashedToken } = generateResetToken();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour expiration
+
+    // Invalidate existing unused tokens for this user
+    await supabase
+      .from('password_resets')
+      .update({ used_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+      .is('used_at', null);
+
+    const resetId = `rst_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const { error } = await supabase.from('password_resets').insert({
+      id: resetId,
+      user_id: user.id,
+      token_hash: hashedToken,
+      expires_at: expiresAt,
+      created_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error('Failed to create password reset record:', error);
+      return { success: true };
+    }
+
+    return { success: true, rawToken, email: user.email };
+  }
+
+  public async verifyPasswordResetToken(rawToken: string): Promise<{ valid: boolean; userId?: string }> {
+    if (!rawToken || typeof rawToken !== 'string') {
+      return { valid: false };
+    }
+
+    const hashedToken = hashResetToken(rawToken);
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('password_resets')
+      .select('id, user_id, expires_at, used_at')
+      .eq('token_hash', hashedToken)
+      .is('used_at', null)
+      .gt('expires_at', now)
+      .single();
+
+    if (error || !data) {
+      return { valid: false };
+    }
+
+    return { valid: true, userId: data.user_id };
+  }
+
+  public async resetPasswordWithToken(rawToken: string, newPasswordHash: string): Promise<{ success: boolean; error?: string }> {
+    const verification = await this.verifyPasswordResetToken(rawToken);
+    if (!verification.valid || !verification.userId) {
+      return { success: false, error: 'INVALID_OR_EXPIRED_TOKEN' };
+    }
+
+    const hashedToken = hashResetToken(rawToken);
+    const now = new Date().toISOString();
+
+    // 1. Mark token as used
+    await supabase
+      .from('password_resets')
+      .update({ used_at: now })
+      .eq('token_hash', hashedToken);
+
+    // 2. Update user's password
+    const { error: userError } = await supabase
+      .from('users')
+      .update({
+        password_hash: newPasswordHash,
+        updated_at: now,
+      })
+      .eq('id', verification.userId);
+
+    if (userError) {
+      return { success: false, error: 'FAILED_TO_UPDATE_PASSWORD' };
+    }
+
+    return { success: true };
+  }
+
+  // --- Dynamic Search and Discovery (Real Database Execution) ---
   public async getPublishedUsers(filters: SearchFilters = {}): Promise<SearchResult> {
-    // 1. Fetch published and discoverable users
     const { data: usersData, error } = await supabase
       .from('users')
       .select('*')
@@ -600,23 +761,19 @@ class DatabaseManager {
 
     let users = usersData.map(mapUserRowToUser).filter(u => this.isProfileComplete(u));
 
-    // Exclude current user if requested
     if (filters.excludeUserId) {
       users = users.filter(u => u.id !== filters.excludeUserId);
     }
 
-    // Filter by country
     if (filters.countries && filters.countries.length > 0) {
       users = users.filter(u =>
         filters.countries!.some(c => u.country.toLowerCase() === c.toLowerCase().trim())
       );
     }
 
-    // Assemble full profiles for rich filtering
     const fullProfiles = await Promise.all(users.map(u => this.assembleUserProfile(u)));
     let candidates = fullProfiles;
 
-    // Filter by Category
     if (filters.categorySlugs && filters.categorySlugs.length > 0) {
       candidates = candidates.filter(profile =>
         filters.categorySlugs!.some(slug =>
@@ -625,7 +782,6 @@ class DatabaseManager {
       );
     }
 
-    // Filter by Skills
     if (filters.skillNames && filters.skillNames.length > 0) {
       candidates = candidates.filter(profile =>
         filters.skillNames!.every(skillFilter =>
@@ -634,7 +790,6 @@ class DatabaseManager {
       );
     }
 
-    // Filter by Interests
     if (filters.interestNames && filters.interestNames.length > 0) {
       candidates = candidates.filter(profile =>
         filters.interestNames!.some(intFilter =>
@@ -643,7 +798,6 @@ class DatabaseManager {
       );
     }
 
-    // Filter by Language
     if (filters.languageCodes && filters.languageCodes.length > 0) {
       candidates = candidates.filter(profile =>
         filters.languageCodes!.some(code =>
@@ -652,7 +806,6 @@ class DatabaseManager {
       );
     }
 
-    // Text search query
     if (filters.query && filters.query.trim()) {
       const q = filters.query.toLowerCase().trim();
       const terms = q.split(/\s+/).filter(Boolean);
@@ -682,7 +835,7 @@ class DatabaseManager {
     const paginated = candidates.slice((page - 1) * limit, page * limit);
 
     return {
-      users: paginated,
+      users: paginated.map(sanitizePublicProfile),
       total,
       page,
       totalPages,
@@ -784,7 +937,8 @@ class DatabaseManager {
 
     if (error || !data) return [];
     const users = data.map(mapUserRowToUser);
-    return Promise.all(users.map(u => this.assembleUserProfile(u)));
+    const profiles = await Promise.all(users.map(u => this.assembleUserProfile(u)));
+    return profiles.map(sanitizeSessionUser);
   }
 }
 

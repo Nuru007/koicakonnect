@@ -1,15 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, sanitizeSessionUser } from '@/lib/db';
 import { verifyPassword, createSessionToken, getAuthCookieHeader } from '@/lib/auth';
+import { rateLimiter } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || 'anonymous';
+    const rateCheck = await rateLimiter.check(`login:${ip}`, 5, 900); // 5 attempts per 15 mins
+    if (!rateCheck.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'RATE_LIMIT_EXCEEDED',
+            message: `Too many sign-in attempts. Please try again in ${rateCheck.retryAfter} seconds.`,
+          },
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Email and password are required',
+          },
+        },
         { status: 400 }
       );
     }
@@ -17,15 +39,40 @@ export async function POST(req: NextRequest) {
     const user = await db.getUserByEmail(email);
     if (!user || !user.passwordHash) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        {
+          success: false,
+          error: {
+            code: 'INVALID_CREDENTIALS',
+            message: 'Unable to sign in with those details. Check your email and password and try again.',
+          },
+        },
         { status: 401 }
+      );
+    }
+
+    if (user.isDeactivated) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'ACCOUNT_DEACTIVATED',
+            message: 'This account is currently unavailable. Please contact Koica Connect support if you believe this is a mistake.',
+          },
+        },
+        { status: 403 }
       );
     }
 
     const isValid = await verifyPassword(password, user.passwordHash);
     if (!isValid) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        {
+          success: false,
+          error: {
+            code: 'INVALID_CREDENTIALS',
+            message: 'Unable to sign in with those details. Check your email and password and try again.',
+          },
+        },
         { status: 401 }
       );
     }
@@ -33,7 +80,13 @@ export async function POST(req: NextRequest) {
     const fullProfile = await db.getUserByUsername(user.username);
     if (!fullProfile) {
       return NextResponse.json(
-        { error: 'Profile not found' },
+        {
+          success: false,
+          error: {
+            code: 'PROFILE_NOT_FOUND',
+            message: 'User profile could not be loaded.',
+          },
+        },
         { status: 404 }
       );
     }
@@ -44,12 +97,17 @@ export async function POST(req: NextRequest) {
       username: user.username,
       name: user.name,
       role: user.role,
-      isAdmin: !!user.isAdmin,
+      isAdmin: Boolean(user.isAdmin),
     });
+
+    const redirectUrl = fullProfile.status === 'published' ? '/dashboard' : '/profile/edit';
 
     const response = NextResponse.json({
       success: true,
-      user: fullProfile,
+      data: {
+        user: sanitizeSessionUser(fullProfile),
+        redirectUrl,
+      },
     });
 
     response.headers.set('Set-Cookie', getAuthCookieHeader(token));
@@ -57,7 +115,13 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Unable to sign in. Please try again later.',
+        },
+      },
       { status: 500 }
     );
   }

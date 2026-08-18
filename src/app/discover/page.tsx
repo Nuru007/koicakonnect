@@ -103,7 +103,9 @@ function DiscoverContent() {
       if (selectedCountries.length > 0) params.set('country', selectedCountries.join(','));
       if (selectedLanguages.length > 0) params.set('language', selectedLanguages.join(','));
 
-      const res = await fetch(`/api/users?${params.toString()}`);
+      const res = await fetch(`/api/users?${params.toString()}`, {
+        cache: 'no-store',
+      });
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users || []);

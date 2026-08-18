@@ -1,38 +1,141 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useLanguage } from '@/context/LanguageContext';
-import { Sparkles, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Sparkles, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, ShieldAlert } from 'lucide-react';
 
-export default function SignInPage() {
+function SignInContent() {
   const { login } = useAuth();
-  const { t } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setErrorCode(null);
     setLoading(true);
 
-    const res = await login(email, password);
-    setLoading(false);
+    const res = await login(email.trim(), password);
 
     if (res.success) {
-      router.push('/dashboard');
+      const redirectParam = searchParams.get('redirect');
+      const destination = redirectParam && redirectParam.startsWith('/') ? redirectParam : res.redirectUrl || '/dashboard';
+      router.push(destination);
     } else {
-      setError(res.error || 'Invalid credentials');
+      setLoading(false);
+      setError(res.error || 'Unable to sign in. Please check your credentials.');
+      setErrorCode(res.code || null);
     }
   };
 
+  return (
+    <>
+      {/* Deactivated Account Error Banner */}
+      {errorCode === 'ACCOUNT_DEACTIVATED' && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3 animate-in fade-in duration-200">
+          <ShieldAlert className="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
+          <div>
+            <p className="font-bold">This account is currently unavailable.</p>
+            <p className="text-[11px] text-amber-800 mt-0.5">
+              Please contact Koica Connect support if you believe this is a mistake.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Standard Error Banner */}
+      {error && errorCode !== 'ACCOUNT_DEACTIVATED' && (
+        <div className="mb-6 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Email */}
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+            Email Address
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <Mail className="w-4 h-4" />
+            </div>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@company.com"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
+            />
+          </div>
+        </div>
+
+        {/* Password */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <Lock className="w-4 h-4" />
+            </div>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full btn-primary py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-brand-md mt-6 disabled:opacity-50 transition-all"
+        >
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              <span>Sign In</span>
+              <ArrowRight className="w-4 h-4" />
+            </>
+          )}
+        </button>
+      </form>
+    </>
+  );
+}
+
+export default function SignInPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#FAFBFF]">
       
@@ -51,86 +154,21 @@ export default function SignInPage() {
               KoicaKonnect
             </span>
           </Link>
-          <h2 className="font-display font-bold text-2xl text-slate-900">
-            Welcome back
+          <h2 className="font-display font-bold text-2xl sm:text-3xl text-slate-900">
+            Welcome Back
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Sign in to manage your professional profile and QR card
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Sign in to manage your discovery profile and QR card.
           </p>
         </div>
 
-        {error && (
-          <div className="mb-6 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-              Email Address
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Mail className="w-4 h-4" />
-              </div>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-              Password
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Lock className="w-4 h-4" />
-              </div>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-primary py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-brand-md mt-2 disabled:opacity-50"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <span>Sign In</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
+        <Suspense fallback={<div className="text-center py-8 text-xs text-slate-400">Loading sign in...</div>}>
+          <SignInContent />
+        </Suspense>
 
         <div className="mt-6 pt-6 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-500">
-            Don&apos;t have a KoicaKonnect profile yet?{' '}
+            Don't have an account yet?{' '}
             <Link href="/signup" className="text-brand-600 font-bold hover:underline">
               Create Profile
             </Link>

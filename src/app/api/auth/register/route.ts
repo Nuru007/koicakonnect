@@ -1,30 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { hashPassword, createSessionToken, getAuthCookieHeader } from '@/lib/auth';
+import { hashPassword, validatePasswordStrength, createSessionToken, getAuthCookieHeader } from '@/lib/auth';
+import { rateLimiter } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || 'anonymous';
+    const rateCheck = await rateLimiter.check(`register:${ip}`, 5, 3600); // 5 attempts per hour
+    if (!rateCheck.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'RATE_LIMIT_EXCEEDED',
+            message: `Too many registration attempts. Please try again in ${rateCheck.retryAfter} seconds.`,
+          },
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { name, email, password, username, role, organisation, country, city, bio } = body;
 
-    if (!name || !email || !password) {
+    if (!name || !name.trim() || !email || !email.trim() || !password) {
       return NextResponse.json(
-        { error: 'Name, email, and password are required' },
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Name, email, and password are required',
+          },
+        },
         { status: 400 }
       );
     }
 
-    if (password.length < 6) {
+    const passCheck = validatePasswordStrength(password);
+    if (!passCheck.valid) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
+        {
+          success: false,
+          error: {
+            code: 'WEAK_PASSWORD',
+            message: passCheck.error || 'Password must be at least 8 characters long',
+          },
+        },
         { status: 400 }
       );
     }
 
-    const existing = await db.getUserByEmail(email);
+    const cleanEmail = email.toLowerCase().trim();
+    const existing = await db.getUserByEmail(cleanEmail);
     if (existing) {
       return NextResponse.json(
-        { error: 'An account with this email already exists' },
+        {
+          success: false,
+          error: {
+            code: 'EMAIL_ALREADY_EXISTS',
+            message: 'An account already exists with this email',
+          },
+        },
         { status: 409 }
       );
     }
@@ -32,16 +68,16 @@ export async function POST(req: NextRequest) {
     const passwordHash = await hashPassword(password);
 
     const userProfile = await db.createUser({
-      name,
-      email,
+      name: name.trim(),
+      email: cleanEmail,
       passwordHash,
       username: username || name,
-      role: role || '',
-      organisation: organisation || '',
-      country: country || '',
-      city: city || '',
-      bio: bio || '',
-      status: 'draft', // Initial state is draft until published
+      role: role ? role.trim() : '',
+      organisation: organisation ? organisation.trim() : '',
+      country: country ? country.trim() : '',
+      city: city ? city.trim() : '',
+      bio: bio ? bio.trim() : '',
+      status: 'draft',
       preferredLanguage: 'en',
     });
 
@@ -51,20 +87,44 @@ export async function POST(req: NextRequest) {
       username: userProfile.username,
       name: userProfile.name,
       role: userProfile.role,
-      isAdmin: !!userProfile.isAdmin,
+      isAdmin: false,
     });
 
     const response = NextResponse.json(
-      { success: true, user: userProfile },
+      {
+        success: true,
+        data: {
+          user: userProfile,
+        },
+      },
       { status: 201 }
     );
 
     response.headers.set('Set-Cookie', getAuthCookieHeader(token));
     return response;
   } catch (error: any) {
+    if (error.message === 'EMAIL_ALREADY_EXISTS') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'EMAIL_ALREADY_EXISTS',
+            message: 'An account already exists with this email',
+          },
+        },
+        { status: 409 }
+      );
+    }
+
     console.error('Registration error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create account' },
+      {
+        success: false,
+        error: {
+          code: 'REGISTRATION_FAILED',
+          message: 'Unable to create account. Please check your connection and try again.',
+        },
+      },
       { status: 500 }
     );
   }
