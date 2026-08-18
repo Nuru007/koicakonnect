@@ -60,20 +60,20 @@ export default function CategoriesPage() {
               <Link
                 key={category.id}
                 href={`/discover?category=${category.slug}`}
-                className="glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between group border border-slate-200/80 bg-white/95"
+                className="glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between group border border-slate-200/80 hover:border-[#00AFFF]/70 bg-white/95 hover:shadow-lg hover:shadow-[#00AFFF]/10 transition-all"
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-brand-50 group-hover:bg-brand-500 text-brand-600 group-hover:text-white flex items-center justify-center transition-colors shadow-2xs">
+                    <div className="w-12 h-12 rounded-2xl bg-brand-50 group-hover:bg-[#00AFFF] text-brand-600 group-hover:text-white flex items-center justify-center transition-colors shadow-2xs">
                       <CategoryIcon nameOrIcon={category.icon || category.slug} className="w-6 h-6" />
                     </div>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 group-hover:bg-brand-100 group-hover:text-brand-700 transition-colors">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 group-hover:bg-sky-50 group-hover:text-[#00AFFF] transition-colors">
                       <Users className="w-3 h-3" />
                       <span>{count}</span>
                     </span>
                   </div>
 
-                  <h3 className="font-display font-bold text-lg text-slate-900 group-hover:text-brand-600 transition-colors mb-1.5">
+                  <h3 className="font-display font-bold text-lg text-slate-900 group-hover:text-[#00AFFF] transition-colors mb-1.5">
                     {category.name}
                   </h3>
 
@@ -82,7 +82,7 @@ export default function CategoriesPage() {
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-600 mt-4">
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-600 group-hover:text-[#00AFFF] transition-colors mt-4">
                   <span>Explore talent</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </div>

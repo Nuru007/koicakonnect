@@ -146,7 +146,7 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
               >
                 <Link
                   href={`/discover?category=${cat.slug}`}
-                  className="group relative h-[400px] sm:h-[440px] rounded-3xl overflow-hidden border border-white/20 hover:border-sky-300/80 transition-all duration-300 transform hover:-translate-y-2 shadow-2xl flex flex-col justify-between p-5 bg-blue-950 block"
+                  className="group relative h-[400px] sm:h-[440px] rounded-3xl overflow-hidden border border-white/20 hover:border-[#00AFFF] transition-all duration-300 transform hover:-translate-y-2 shadow-2xl hover:shadow-[0_12px_40px_rgba(0,175,255,0.4)] flex flex-col justify-between p-5 bg-blue-950 block"
                 >
                   {/* Photography with Subtle Hover Zoom */}
                   <img
@@ -160,16 +160,21 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
 
                   {/* Top Corner Pill: Card Number */}
                   <div className="relative z-10 flex justify-end">
-                    <span className="px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/25 text-white/95 text-xs font-mono font-bold shadow-md">
+                    <span className="px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/25 group-hover:border-[#00AFFF]/50 text-white/95 group-hover:text-[#00AFFF] text-xs font-mono font-bold shadow-md transition-colors">
                       {cat.num}
                     </span>
                   </div>
 
                   {/* Bottom Glassmorphic Card Container */}
-                  <div className="relative z-10 p-5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-2xl transition-all duration-300 group-hover:bg-white/25 group-hover:border-white/40">
-                    <h3 className="font-display font-extrabold text-lg sm:text-xl text-white group-hover:text-sky-200 transition-colors tracking-tight mb-1.5">
-                      {cat.name}
-                    </h3>
+                  <div className="relative z-10 p-5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-2xl transition-all duration-300 group-hover:bg-white/25 group-hover:border-[#00AFFF]/60">
+                    <div className="flex items-center justify-between gap-3 mb-1.5">
+                      <h3 className="font-display font-extrabold text-lg sm:text-xl text-white group-hover:text-[#00AFFF] transition-colors tracking-tight">
+                        {cat.name}
+                      </h3>
+                      <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white group-hover:bg-[#00AFFF] group-hover:text-slate-950 group-hover:border-[#00AFFF] group-hover:scale-110 group-hover:translate-x-0.5 transition-all duration-300 shadow-md flex-shrink-0">
+                        <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                      </div>
+                    </div>
                     <p className="text-xs text-blue-50/90 line-clamp-2 leading-relaxed font-medium">
                       {cat.description}
                     </p>
