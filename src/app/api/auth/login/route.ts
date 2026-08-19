@@ -3,6 +3,10 @@ import { db, sanitizeSessionUser } from '@/lib/db';
 import { verifyPassword, createSessionToken, setAuthCookie } from '@/lib/auth';
 import { rateLimiter } from '@/lib/rate-limit';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for') || 'anonymous';

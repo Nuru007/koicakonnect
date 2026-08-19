@@ -3,17 +3,22 @@ import { getSessionFromRequest, clearAuthCookie } from '@/lib/auth';
 import { db, sanitizeSessionUser } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getSessionFromRequest(req);
     if (!session || !session.userId) {
-      return NextResponse.json({ success: true, data: { user: null }, user: null });
+      const response = NextResponse.json({ success: true, data: { user: null }, user: null });
+      response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
+      return response;
     }
 
     const user = await db.getUserById(session.userId);
     if (!user || user.isDeactivated) {
       const response = NextResponse.json({ success: true, data: { user: null }, user: null });
+      response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
       clearAuthCookie(response);
       return response;
     }
@@ -21,20 +26,24 @@ export async function GET(req: NextRequest) {
     const profile = await db.getUserByUsername(user.username);
     if (!profile) {
       const response = NextResponse.json({ success: true, data: { user: null }, user: null });
+      response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
       clearAuthCookie(response);
       return response;
     }
 
     const sanitized = sanitizeSessionUser(profile);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: { user: sanitized },
       user: sanitized,
     });
+    response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
+    return response;
   } catch (error) {
     console.error('Error fetching session user:', error);
     const response = NextResponse.json({ success: true, data: { user: null }, user: null });
+    response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
     return response;
   }
 }
