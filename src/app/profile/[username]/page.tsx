@@ -10,6 +10,7 @@ import { translateProfileText } from '@/lib/translations';
 import {
   MapPin,
   Globe,
+  Mail,
   Linkedin,
   Github,
   Link as LinkIcon,
@@ -245,6 +246,18 @@ export default function PublicProfilePage() {
                   </p>
                 )}
 
+                {profile.email && (
+                  <p className="text-xs text-slate-600 flex items-center justify-center sm:justify-start gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-brand-500 flex-shrink-0" />
+                    <a
+                      href={`mailto:${profile.email}`}
+                      className="hover:text-brand-600 hover:underline font-medium truncate"
+                    >
+                      {profile.email}
+                    </a>
+                  </p>
+                )}
+
                 {/* Categories badges */}
                 {profile.categories.length > 0 && (
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-2">
@@ -261,7 +274,7 @@ export default function PublicProfilePage() {
               </div>
             </div>
 
-            {/* Right: External Networking CTAs (LinkedIn Primary) */}
+            {/* Right: External Networking CTAs (LinkedIn Primary & Direct Email) */}
             <div className="flex flex-col gap-2.5 w-full md:w-64 flex-shrink-0">
               {linkedInLink ? (
                 <a
@@ -278,6 +291,18 @@ export default function PublicProfilePage() {
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-center">
                   <p className="text-xs font-semibold text-slate-500">No LinkedIn URL linked</p>
                 </div>
+              )}
+
+              {/* Direct Email Contact Action */}
+              {profile.email && (
+                <a
+                  href={`mailto:${profile.email}`}
+                  className="btn-secondary py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-800 hover:text-brand-600 hover:border-brand-200 transition-all shadow-2xs"
+                >
+                  <Mail className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                  <span className="truncate">Contact via Email</span>
+                  <ExternalLink className="w-3 h-3 ml-auto text-slate-400" />
+                </a>
               )}
 
               {/* Other external links */}

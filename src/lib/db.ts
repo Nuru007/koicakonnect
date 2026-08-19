@@ -35,7 +35,7 @@ export function sanitizePublicProfile(profile: UserProfile): UserProfile {
     profileImage: profile.profileImage,
     preferredLanguage: profile.preferredLanguage,
     status: profile.status,
-    email: '', // Never expose raw email in public discovery API
+    email: profile.email || '',
     isDiscoverable: profile.isDiscoverable,
     isProfileComplete: profile.isProfileComplete,
     createdAt: profile.createdAt,
