@@ -23,14 +23,7 @@ export async function GET(req: NextRequest) {
       return response;
     }
 
-    const profile = await db.getUserByUsername(user.username);
-    if (!profile) {
-      const response = NextResponse.json({ success: true, data: { user: null }, user: null });
-      response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
-      clearAuthCookie(response);
-      return response;
-    }
-
+    const profile = await db.assembleUserProfile(user);
     const sanitized = sanitizeSessionUser(profile);
 
     const response = NextResponse.json({
@@ -41,7 +34,7 @@ export async function GET(req: NextRequest) {
     response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
     return response;
   } catch (error) {
-    console.error('Error fetching session user:', error);
+    console.error('Error fetching session user in /api/auth/me:', error);
     const response = NextResponse.json({ success: true, data: { user: null }, user: null });
     response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
     return response;

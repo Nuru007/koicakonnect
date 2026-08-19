@@ -36,14 +36,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const profile = await db.getUserByUsername(user.username);
+    const profile = await db.assembleUserProfile(user);
     const sanitized = profile ? sanitizeSessionUser(profile) : null;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: { profile: sanitized },
       profile: sanitized,
     });
+    response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
+    return response;
   } catch (error) {
     console.error('Error fetching profile:', error);
     return NextResponse.json(
