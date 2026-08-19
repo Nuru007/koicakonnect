@@ -1,65 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'koicakonnect-super-secret-key-2026-production-secure'
-);
-
-const COOKIE_NAME = 'koicakonnect_session';
-const LEGACY_COOKIE_NAME = 'networth_session';
-
-const PROTECTED_ROUTES = [
-  '/dashboard',
-  '/profile/edit',
-  '/settings',
-  '/admin',
-];
-
-async function verifyToken(token: string): Promise<boolean> {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return Boolean(payload && payload.userId);
-  } catch {
-    return false;
-  }
-}
-
-export async function middleware(req: NextRequest) {
-  const { pathname, search } = req.nextUrl;
-
-  const isProtected = PROTECTED_ROUTES.some(
-    prefix => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  );
-
-  if (!isProtected) {
-    return NextResponse.next();
-  }
-
-  const token =
-    req.cookies.get(COOKIE_NAME)?.value ||
-    req.cookies.get(LEGACY_COOKIE_NAME)?.value;
-
-  const isValidSession = token ? await verifyToken(token) : false;
-
-  // Protected route access by unauthenticated visitor -> redirect to /signin
-  if (!isValidSession) {
-    const redirectUrl = new URL('/signin', req.url);
-    redirectUrl.searchParams.set('redirect', `${pathname}${search}`);
-    return NextResponse.redirect(redirectUrl);
-  }
-
+export async function middleware(_req: NextRequest) {
+  // Let client and API handle granular authentication without brittle Edge redirect loops
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/dashboard',
-    '/dashboard/:path*',
-    '/profile/edit',
-    '/profile/edit/:path*',
-    '/settings',
-    '/settings/:path*',
-    '/admin',
-    '/admin/:path*',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };

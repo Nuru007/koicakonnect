@@ -355,11 +355,7 @@ export default function ProfileEditPage() {
     { id: 8, title: 'Preview & Publish', icon: Eye },
   ];
 
-  React.useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/signin');
-    }
-  }, [authLoading, user, router]);
+
 
   if (authLoading) {
     return (

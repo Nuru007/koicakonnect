@@ -30,11 +30,7 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  React.useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/signin');
-    }
-  }, [loading, user, router]);
+
 
   if (loading) {
     return (

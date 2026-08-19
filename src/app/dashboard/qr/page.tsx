@@ -20,11 +20,7 @@ export default function QRPage() {
   const { t } = useLanguage();
   const router = useRouter();
 
-  React.useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/signin');
-    }
-  }, [loading, user, router]);
+
 
   if (loading) {
     return (
