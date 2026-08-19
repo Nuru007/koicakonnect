@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { hashPassword, validatePasswordStrength, createSessionToken, getAuthCookieHeader } from '@/lib/auth';
+import { hashPassword, validatePasswordStrength, createSessionToken, setAuthCookie } from '@/lib/auth';
 import { rateLimiter } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
 
-    response.headers.set('Set-Cookie', getAuthCookieHeader(token));
+    setAuthCookie(response, token);
     return response;
   } catch (error: any) {
     if (error.message === 'EMAIL_ALREADY_EXISTS') {

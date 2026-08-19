@@ -1,10 +1,10 @@
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
-import { SignJWT, jwtVerify } from 'jose';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { NextRequest } from 'next/server';
-import { AuthSession, User } from './types';
-import { db } from './db';
+import bcrypt from 'bcryptjs';
+import { SignJWT, jwtVerify } from 'jose';
+import crypto from 'crypto';
+import { User, AuthSession } from '@/lib/types';
+import { db } from '@/lib/db';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'koicakonnect-super-secret-key-2026-production-secure'
@@ -23,19 +23,24 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
+// Strong password policy: min 8 chars
 export function validatePasswordStrength(password: string): { valid: boolean; error?: string } {
-  if (!password || typeof password !== 'string') {
-    return { valid: false, error: 'Password is required' };
-  }
-  if (password.length < 8) {
-    return { valid: false, error: 'Password must be at least 8 characters long' };
+  if (typeof password !== 'string' || password.length < 8) {
+    return { valid: false, error: 'Password must be at least 8 characters long.' };
   }
   return { valid: true };
 }
 
-// --- JWT Session Tokens ---
-export async function createSessionToken(session: AuthSession): Promise<string> {
-  return new SignJWT({ ...session })
+// --- Session Token Generation (JWT) ---
+export async function createSessionToken(payload: {
+  userId: string;
+  email: string;
+  username: string;
+  name: string;
+  role: string;
+  isAdmin: boolean;
+}): Promise<string> {
+  return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('30d')
@@ -114,7 +119,41 @@ export async function getSessionFromRequest(req: NextRequest): Promise<AuthSessi
   return verifySessionToken(token);
 }
 
-// --- Cookie Header Generators ---
+// --- Cookie Manipulators for NextResponse ---
+export function setAuthCookie(res: NextResponse, token: string): void {
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookies.set({
+    name: COOKIE_NAME,
+    value: token,
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  });
+}
+
+export function clearAuthCookie(res: NextResponse): void {
+  res.cookies.set({
+    name: COOKIE_NAME,
+    value: '',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+  res.cookies.set({
+    name: LEGACY_COOKIE_NAME,
+    value: '',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+}
+
 export function getAuthCookieHeader(token: string): string {
   const isProd = process.env.NODE_ENV === 'production';
   return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}${

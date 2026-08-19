@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest, getClearAuthCookieHeader } from '@/lib/auth';
+import { getSessionFromRequest, clearAuthCookie } from '@/lib/auth';
 import { db, sanitizeSessionUser } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -14,14 +14,14 @@ export async function GET(req: NextRequest) {
     const user = await db.getUserById(session.userId);
     if (!user || user.isDeactivated) {
       const response = NextResponse.json({ success: true, data: { user: null }, user: null });
-      response.headers.set('Set-Cookie', getClearAuthCookieHeader());
+      clearAuthCookie(response);
       return response;
     }
 
     const profile = await db.getUserByUsername(user.username);
     if (!profile) {
       const response = NextResponse.json({ success: true, data: { user: null }, user: null });
-      response.headers.set('Set-Cookie', getClearAuthCookieHeader());
+      clearAuthCookie(response);
       return response;
     }
 
@@ -35,7 +35,6 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('Error fetching session user:', error);
     const response = NextResponse.json({ success: true, data: { user: null }, user: null });
-    response.headers.set('Set-Cookie', getClearAuthCookieHeader());
     return response;
   }
 }

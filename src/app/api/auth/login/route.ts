@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, sanitizeSessionUser } from '@/lib/db';
-import { verifyPassword, createSessionToken, getAuthCookieHeader } from '@/lib/auth';
+import { verifyPassword, createSessionToken, setAuthCookie } from '@/lib/auth';
 import { rateLimiter } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    response.headers.set('Set-Cookie', getAuthCookieHeader(token));
+    setAuthCookie(response, token);
     return response;
   } catch (error: any) {
     console.error('Login error:', error);

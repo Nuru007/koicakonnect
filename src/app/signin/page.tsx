@@ -30,10 +30,16 @@ function SignInContent() {
     if (res.success) {
       setSuccessMsg('Signing you in... Directing to your dashboard.');
       const redirectParam = searchParams.get('redirect');
-      const destination = redirectParam && redirectParam.startsWith('/') ? redirectParam : res.redirectUrl || '/dashboard';
+      const isValidRedirect = Boolean(
+        redirectParam &&
+        redirectParam.startsWith('/') &&
+        !redirectParam.startsWith('/signin') &&
+        !redirectParam.startsWith('/signup')
+      );
+      const destination = isValidRedirect ? redirectParam! : res.redirectUrl || '/dashboard';
       setTimeout(() => {
         window.location.href = destination;
-      }, 400);
+      }, 350);
     } else {
       setLoading(false);
       setError(res.error || 'Unable to sign in. Please check your credentials.');
