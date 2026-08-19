@@ -6,7 +6,7 @@ import { rateLimiter } from '@/lib/rate-limit';
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for') || 'anonymous';
-    const rateCheck = await rateLimiter.check(`login:${ip}`, 5, 900); // 5 attempts per 15 mins
+    const rateCheck = await rateLimiter.check(`login:${ip}`, 25, 900); // 25 attempts per 15 mins
     if (!rateCheck.success) {
       return NextResponse.json(
         {

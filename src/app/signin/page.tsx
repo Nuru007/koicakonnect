@@ -17,6 +17,7 @@ function SignInContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +28,12 @@ function SignInContent() {
     const res = await login(email.trim(), password);
 
     if (res.success) {
+      setSuccessMsg('Signing you in... Directing to your dashboard.');
       const redirectParam = searchParams.get('redirect');
       const destination = redirectParam && redirectParam.startsWith('/') ? redirectParam : res.redirectUrl || '/dashboard';
-      window.location.href = destination;
+      setTimeout(() => {
+        window.location.href = destination;
+      }, 400);
     } else {
       setLoading(false);
       setError(res.error || 'Unable to sign in. Please check your credentials.');
@@ -39,6 +43,14 @@ function SignInContent() {
 
   return (
     <>
+      {/* Success Notification Banner */}
+      {successMsg && (
+        <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center gap-2.5 animate-in fade-in duration-200">
+          <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+
       {/* Deactivated Account Error Banner */}
       {errorCode === 'ACCOUNT_DEACTIVATED' && (
         <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3 animate-in fade-in duration-200">
