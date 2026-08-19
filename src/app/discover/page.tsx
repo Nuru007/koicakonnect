@@ -28,20 +28,37 @@ function DiscoverContent() {
   // Search & Filter state
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    searchParams.get('category') ? searchParams.get('category')!.split(',') : []
+    searchParams.get('category') ? searchParams.get('category')!.split(',').filter(Boolean) : []
   );
   const [selectedSkills, setSelectedSkills] = useState<string[]>(
-    searchParams.get('skill') ? searchParams.get('skill')!.split(',') : []
+    searchParams.get('skill') ? searchParams.get('skill')!.split(',').filter(Boolean) : []
   );
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
-    searchParams.get('interest') ? searchParams.get('interest')!.split(',') : []
+    searchParams.get('interest') ? searchParams.get('interest')!.split(',').filter(Boolean) : []
   );
   const [selectedCountries, setSelectedCountries] = useState<string[]>(
-    searchParams.get('country') ? searchParams.get('country')!.split(',') : []
+    searchParams.get('country') ? searchParams.get('country')!.split(',').filter(Boolean) : []
   );
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
-    searchParams.get('language') ? searchParams.get('language')!.split(',') : []
+    searchParams.get('language') ? searchParams.get('language')!.split(',').filter(Boolean) : []
   );
+
+  // Synchronize filter state whenever searchParams in the URL change
+  useEffect(() => {
+    const qParam = searchParams.get('q') || '';
+    const catParam = searchParams.get('category');
+    const skillParam = searchParams.get('skill');
+    const intParam = searchParams.get('interest');
+    const countryParam = searchParams.get('country');
+    const langParam = searchParams.get('language');
+
+    setQuery(qParam);
+    setSelectedCategories(catParam ? catParam.split(',').filter(Boolean) : []);
+    setSelectedSkills(skillParam ? skillParam.split(',').filter(Boolean) : []);
+    setSelectedInterests(intParam ? intParam.split(',').filter(Boolean) : []);
+    setSelectedCountries(countryParam ? countryParam.split(',').filter(Boolean) : []);
+    setSelectedLanguages(langParam ? langParam.split(',').filter(Boolean) : []);
+  }, [searchParams]);
 
   // Filter drawer mobile state
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);

@@ -949,25 +949,35 @@ class DatabaseManager {
       .eq('is_deactivated', false)
       .neq('country', '');
 
-    if (!data) return [];
-
     const countMap: Record<string, { country: string; count: number }> = {};
-    for (const u of data) {
-      if (u.name?.trim() && u.role?.trim()) {
-        const rawCountry = u.country?.trim();
-        if (rawCountry) {
-          const canonicalName = normalizeCountry(rawCountry);
-          const key = canonicalName.toLowerCase();
 
-          if (!countMap[key]) {
-            countMap[key] = { country: canonicalName, count: 0 };
+    // Seed the 5 primary African countries so they are always listed in filters
+    for (const c of PRIMARY_AFRICAN_COUNTRIES) {
+      countMap[c.name.toLowerCase()] = { country: c.name, count: 0 };
+    }
+
+    if (data) {
+      for (const u of data) {
+        if (u.name?.trim() && u.role?.trim()) {
+          const rawCountry = u.country?.trim();
+          if (rawCountry) {
+            const canonicalName = normalizeCountry(rawCountry);
+            const key = canonicalName.toLowerCase();
+
+            if (!countMap[key]) {
+              countMap[key] = { country: canonicalName, count: 0 };
+            }
+            countMap[key].count += 1;
           }
-          countMap[key].count += 1;
         }
       }
     }
 
-    return Object.values(countMap).sort((a, b) => b.count - a.count);
+    return Object.values(countMap).sort((a, b) => {
+      // Primary partner countries sorted first by count, then alphabetical
+      if (b.count !== a.count) return b.count - a.count;
+      return a.country.localeCompare(b.country);
+    });
   }
 
   public async getPlatformStats(): Promise<{

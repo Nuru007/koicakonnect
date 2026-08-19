@@ -148,7 +148,7 @@ export default function CountriesPage() {
                 return (
                   <Link
                     key={country.code}
-                    href={hasMembers ? `/discover?country=${encodeURIComponent(country.name)}` : `/discover`}
+                    href={`/discover?country=${encodeURIComponent(country.name)}`}
                     className={`surface-card surface-card-hover rounded-3xl p-5 flex flex-col justify-between group border transition-all duration-300 relative overflow-hidden bg-white ${
                       hasMembers
                         ? 'border-slate-200/90 shadow-xs hover:shadow-md hover:border-brand-400'
