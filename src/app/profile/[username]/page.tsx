@@ -188,6 +188,24 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
+        {/* Draft Mode Notice for Owner */}
+        {profile.status === 'draft' && isOwner && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+              <span>
+                <strong>Your profile is currently in draft mode.</strong> Only you can view this page until you publish it.
+              </span>
+            </div>
+            <Link
+              href="/profile/edit"
+              className="btn-primary px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap"
+            >
+              Complete & Publish
+            </Link>
+          </div>
+        )}
+
         {/* Profile Card Header */}
         <div className="surface-card rounded-3xl p-6 sm:p-10 border border-slate-200 bg-white shadow-xs mb-8">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">

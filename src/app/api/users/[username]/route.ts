@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { username: string } }
 ) {
   try {
@@ -24,15 +25,27 @@ export async function GET(
       );
     }
 
-    // Query genuinely public-facing profile (enforcing published & discoverable & non-deactivated)
-    const publicProfile = await db.getPublicProfileByUsername(username.trim());
-    if (!publicProfile) {
+    const cleanUsername = username.trim();
+    const session = await getSessionFromRequest(req);
+
+    // 1. Try fetching public profile (published & discoverable)
+    let profile = await db.getPublicProfileByUsername(cleanUsername);
+
+    // 2. If not public, allow the profile owner or admin to preview their own profile (e.g. draft mode)
+    if (!profile && session?.userId) {
+      const selfProfile = await db.getUserByUsername(cleanUsername);
+      if (selfProfile && (selfProfile.id === session.userId || selfProfile.isAdmin)) {
+        profile = selfProfile;
+      }
+    }
+
+    if (!profile) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'PROFILE_NOT_FOUND',
-            message: 'Profile not found',
+            message: 'Profile not found or currently unpublished',
           },
         },
         { status: 404 }
@@ -42,15 +55,15 @@ export async function GET(
     const response = NextResponse.json({
       success: true,
       data: {
-        profile: publicProfile,
+        profile,
       },
-      profile: publicProfile,
+      profile,
     });
 
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     return response;
   } catch (error: any) {
-    console.error('Error fetching public user profile:', error);
+    console.error('Error fetching user profile:', error);
     return NextResponse.json(
       {
         success: false,

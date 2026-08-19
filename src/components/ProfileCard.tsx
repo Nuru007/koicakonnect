@@ -15,8 +15,16 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
   const { t } = useLanguage();
   const { user: currentUser } = useAuth();
 
+  if (!profile) return null;
+
   const isOwnCard = currentUser?.id === profile.id || currentUser?.username === profile.username;
   const profileHref = profile.username ? `/profile/${profile.username}` : `/profile/${profile.id}`;
+
+  const categories = profile.categories || [];
+  const skills = profile.skills || [];
+  const interests = profile.interests || [];
+  const languages = profile.languages || [];
+  const links = profile.links || [];
 
   const getInitials = (name: string) => {
     const parts = (name || '').trim().split(/\s+/);
@@ -46,7 +54,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
             <div className="relative flex-shrink-0">
               <img
                 src={profile.profileImage}
-                alt={profile.name}
+                alt={profile.name || 'User'}
                 className="w-16 h-16 rounded-2xl object-cover ring-1 ring-slate-200 group-hover:ring-brand-500 group-hover:scale-105 transition-all duration-300 shadow-xs"
               />
               <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white shadow-xs" title="Verified Profile" />
@@ -98,9 +106,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
         )}
 
         {/* Categories Badges */}
-        {profile.categories.length > 0 && (
+        {categories.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {profile.categories.slice(0, 2).map((cat) => (
+            {categories.slice(0, 2).map((cat) => (
               <span
                 key={cat.id}
                 className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/80 group-hover:border-brand-200 transition-colors"
@@ -108,22 +116,22 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
                 {cat.name}
               </span>
             ))}
-            {profile.categories.length > 2 && (
+            {categories.length > 2 && (
               <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-50 text-slate-500">
-                +{profile.categories.length - 2}
+                +{categories.length - 2}
               </span>
             )}
           </div>
         )}
 
         {/* Skills Chips */}
-        {profile.skills.length > 0 && (
+        {skills.length > 0 && (
           <div className="mb-3">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
               {t.discover.skills}
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {profile.skills.slice(0, 3).map((skill) => (
+              {skills.slice(0, 3).map((skill) => (
                 <span
                   key={skill.id}
                   className="badge-pill text-[11px] py-0.5 px-2"
@@ -131,9 +139,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
                   {skill.name}
                 </span>
               ))}
-              {profile.skills.length > 3 && (
+              {skills.length > 3 && (
                 <span className="text-[10px] text-slate-500 self-center font-medium">
-                  +{profile.skills.length - 3} more
+                  +{skills.length - 3} more
                 </span>
               )}
             </div>
@@ -141,13 +149,13 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
         )}
 
         {/* Areas of Interest Chips */}
-        {profile.interests.length > 0 && (
+        {interests.length > 0 && (
           <div className="mb-4">
             <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 block mb-1.5">
               {t.discover.interests}
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {profile.interests.slice(0, 2).map((interest) => (
+              {interests.slice(0, 2).map((interest) => (
                 <span
                   key={interest.id}
                   className="badge-pill badge-interest text-[11px] py-0.5 px-2"
@@ -155,9 +163,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
                   {interest.name}
                 </span>
               ))}
-              {profile.interests.length > 2 && (
+              {interests.length > 2 && (
                 <span className="text-[10px] text-sky-700 self-center font-medium">
-                  +{profile.interests.length - 2}
+                  +{interests.length - 2}
                 </span>
               )}
             </div>
@@ -171,19 +179,19 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
           <div className="flex items-center gap-1 text-[11px] text-slate-500">
             <Globe className="w-3.5 h-3.5 text-slate-400" />
             <span>
-              {profile.languages.length > 0
-                ? profile.languages.map((l) => l.code.toUpperCase()).join(', ')
+              {languages.length > 0
+                ? languages.map((l) => l.code.toUpperCase()).join(', ')
                 : 'EN'}
             </span>
           </div>
 
-          {profile.links?.find((l) => l.platform === 'linkedin' && l.url) && (
+          {links.find((l) => l.platform === 'linkedin' && l.url) && (
             <button
               type="button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const rawUrl = profile.links.find((l) => l.platform === 'linkedin')?.url || '';
+                const rawUrl = links.find((l) => l.platform === 'linkedin')?.url || '';
                 const url = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
                 window.open(url, '_blank', 'noopener,noreferrer');
               }}

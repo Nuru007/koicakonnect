@@ -44,15 +44,20 @@ export default function DashboardPage() {
     );
   }
 
+  const skills = user.skills || [];
+  const interests = user.interests || [];
+  const categories = user.categories || [];
+  const links = user.links || [];
+
   // Calculate profile completeness
   const completenessItems = [
     { label: 'Basic Info & Role', isDone: Boolean(user.name && user.role) },
     { label: 'Headshot Photo', isDone: Boolean(user.profileImage) },
     { label: 'Professional Bio', isDone: Boolean(user.bio && user.bio.length > 20) },
-    { label: 'At least 3 Skills', isDone: Boolean(user.skills && user.skills.length >= 3) },
-    { label: 'Areas of Interest', isDone: Boolean(user.interests && user.interests.length >= 1) },
-    { label: 'Industry Categories', isDone: Boolean(user.categories && user.categories.length >= 1) },
-    { label: 'LinkedIn Profile Link', isDone: Boolean(user.links && user.links.some(l => l.platform === 'linkedin')) },
+    { label: 'At least 3 Skills', isDone: Boolean(skills.length >= 3) },
+    { label: 'Areas of Interest', isDone: Boolean(interests.length >= 1) },
+    { label: 'Industry Categories', isDone: Boolean(categories.length >= 1) },
+    { label: 'LinkedIn Profile Link', isDone: Boolean(links.some(l => l.platform === 'linkedin')) },
   ];
 
   const completedCount = completenessItems.filter(i => i.isDone).length;
