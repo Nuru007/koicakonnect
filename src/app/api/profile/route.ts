@@ -169,6 +169,19 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    if (error.message === 'IMAGE_TOO_LARGE') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'IMAGE_TOO_LARGE',
+            message: 'The uploaded image exceeds the maximum size limit of 10MB. Please choose a smaller image.',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     console.error('Error updating profile:', error);
     return NextResponse.json(
       {

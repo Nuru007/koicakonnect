@@ -163,12 +163,13 @@ export default function ProfileEditPage() {
     if (!file) return;
     const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
     if (!validTypes.includes(file.type.toLowerCase()) && !file.name.match(/\.(png|jpe?g|webp)$/i)) {
-      setError('Please upload a PNG, JPG, or JPEG image format');
+      setError('Please upload a valid PNG, JPG, or JPEG image file.');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      setError('Image file must be under 10MB');
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      setError(`Image file is too large (${sizeMB}MB). The maximum allowed file size is 10MB. Please choose an image smaller than 10MB.`);
       return;
     }
 
@@ -574,10 +575,17 @@ export default function ProfileEditPage() {
                       </p>
                     </label>
 
-                    {profileImage && (
+                    {profileImage && !error && (
                       <p className="text-[11px] text-emerald-600 font-semibold mt-2 flex items-center gap-1">
                         <Check className="w-3.5 h-3.5" /> Photo selected and ready
                       </p>
+                    )}
+
+                    {error && error.toLowerCase().includes('image') && (
+                      <div className="mt-2.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
+                        <span>{error}</span>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -66,6 +66,12 @@ async function uploadAvatarIfBase64(userId: string, base64Data: string, oldAvata
 
     const contentType = matches[1];
     const buffer = Buffer.from(matches[2], 'base64');
+    
+    // Strict 10MB size guard
+    if (buffer.length > 10 * 1024 * 1024) {
+      throw new Error('IMAGE_TOO_LARGE');
+    }
+
     const ext = contentType.includes('png') ? 'png' : 'jpg';
     const newFileName = `user_${userId}_avatar_${Date.now()}.${ext}`;
 
