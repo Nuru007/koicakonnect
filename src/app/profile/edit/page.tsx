@@ -357,15 +357,34 @@ export default function ProfileEditPage() {
 
   React.useEffect(() => {
     if (!authLoading && !user) {
-      window.location.href = '/signin?redirect=/profile/edit';
+      router.replace('/signin');
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, router]);
 
-  if (authLoading || !user) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] py-20 flex flex-col items-center justify-center text-center px-4">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-xs font-semibold text-slate-500">Checking your authentication session...</p>
+        <p className="text-xs font-semibold text-slate-500">Loading Profile Builder...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] py-20 flex flex-col items-center justify-center text-center px-4">
+        <div className="surface-card rounded-3xl p-8 max-w-md w-full border border-slate-200 bg-white shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-4">
+            <User className="w-6 h-6" />
+          </div>
+          <h2 className="font-display font-bold text-xl text-slate-900 mb-2">Sign In Required</h2>
+          <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+            Please sign in to your KOICA CONNECT account to build and edit your profile.
+          </p>
+          <Link href="/signin" className="btn-primary w-full py-3 rounded-xl text-xs font-bold block text-center shadow-brand-sm">
+            Sign In to Profile Builder
+          </Link>
+        </div>
       </div>
     );
   }

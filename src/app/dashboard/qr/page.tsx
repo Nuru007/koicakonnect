@@ -22,15 +22,34 @@ export default function QRPage() {
 
   React.useEffect(() => {
     if (!loading && !user) {
-      window.location.href = '/signin?redirect=/dashboard/qr';
+      router.replace('/signin');
     }
-  }, [loading, user]);
+  }, [loading, user, router]);
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] py-20 flex flex-col items-center justify-center text-center px-4">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-xs font-semibold text-slate-500">Checking your authentication session...</p>
+        <p className="text-xs font-semibold text-slate-500">Loading your Digital Pass...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] py-20 flex flex-col items-center justify-center text-center px-4">
+        <div className="surface-card rounded-3xl p-8 max-w-md w-full border border-slate-200 bg-white shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-4">
+            <QrCode className="w-6 h-6" />
+          </div>
+          <h2 className="font-display font-bold text-xl text-slate-900 mb-2">Sign In Required</h2>
+          <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+            Please sign in to view and download your Digital Identity Pass.
+          </p>
+          <Link href="/signin" className="btn-primary w-full py-3 rounded-xl text-xs font-bold block text-center shadow-brand-sm">
+            Sign In to View Pass
+          </Link>
+        </div>
       </div>
     );
   }

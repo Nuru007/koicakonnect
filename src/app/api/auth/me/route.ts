@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/auth';
+import { getSessionFromRequest, getClearAuthCookieHeader } from '@/lib/auth';
 import { db, sanitizeSessionUser } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -13,12 +13,16 @@ export async function GET(req: NextRequest) {
 
     const user = await db.getUserById(session.userId);
     if (!user || user.isDeactivated) {
-      return NextResponse.json({ success: true, data: { user: null }, user: null });
+      const response = NextResponse.json({ success: true, data: { user: null }, user: null });
+      response.headers.set('Set-Cookie', getClearAuthCookieHeader());
+      return response;
     }
 
     const profile = await db.getUserByUsername(user.username);
     if (!profile) {
-      return NextResponse.json({ success: true, data: { user: null }, user: null });
+      const response = NextResponse.json({ success: true, data: { user: null }, user: null });
+      response.headers.set('Set-Cookie', getClearAuthCookieHeader());
+      return response;
     }
 
     const sanitized = sanitizeSessionUser(profile);
@@ -30,6 +34,8 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching session user:', error);
-    return NextResponse.json({ success: true, data: { user: null }, user: null });
+    const response = NextResponse.json({ success: true, data: { user: null }, user: null });
+    response.headers.set('Set-Cookie', getClearAuthCookieHeader());
+    return response;
   }
 }

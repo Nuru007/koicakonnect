@@ -15,11 +15,6 @@ const PROTECTED_ROUTES = [
   '/admin',
 ];
 
-const AUTH_ONLY_PAGES = [
-  '/signin',
-  '/signup',
-];
-
 async function verifyToken(token: string): Promise<boolean> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
@@ -35,9 +30,8 @@ export async function middleware(req: NextRequest) {
   const isProtected = PROTECTED_ROUTES.some(
     prefix => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
-  const isAuthPage = AUTH_ONLY_PAGES.some(page => pathname === page);
 
-  if (!isProtected && !isAuthPage) {
+  if (!isProtected) {
     return NextResponse.next();
   }
 
@@ -47,18 +41,11 @@ export async function middleware(req: NextRequest) {
 
   const isValidSession = token ? await verifyToken(token) : false;
 
-  // 1. Protected route access by unauthenticated visitor -> redirect immediately to /signin
-  if (isProtected && !isValidSession) {
+  // Protected route access by unauthenticated visitor -> redirect to /signin
+  if (!isValidSession) {
     const redirectUrl = new URL('/signin', req.url);
     redirectUrl.searchParams.set('redirect', `${pathname}${search}`);
     return NextResponse.redirect(redirectUrl);
-  }
-
-  // 2. Auth page (/signin, /signup) access by already authenticated user -> redirect to /dashboard
-  if (isAuthPage && isValidSession) {
-    const redirectParam = req.nextUrl.searchParams.get('redirect');
-    const destination = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
-    return NextResponse.redirect(new URL(destination, req.url));
   }
 
   return NextResponse.next();
@@ -74,7 +61,5 @@ export const config = {
     '/settings/:path*',
     '/admin',
     '/admin/:path*',
-    '/signin',
-    '/signup',
   ],
 };
