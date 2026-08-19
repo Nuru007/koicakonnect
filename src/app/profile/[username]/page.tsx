@@ -1,12 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserProfile, ProfessionalLink } from '@/lib/types';
-import { translateProfileText } from '@/lib/translations';
+import {
+  getLocalizedCategoryName,
+  getLocalizedSkillName,
+  getLocalizedInterestName,
+} from '@/lib/taxonomy-translations';
 import {
   MapPin,
   Globe,
@@ -27,6 +31,7 @@ import {
   Layers,
   Compass,
   Lightbulb,
+  Sparkles,
 } from 'lucide-react';
 
 export default function PublicProfilePage() {
@@ -34,21 +39,24 @@ export default function PublicProfilePage() {
   const username = params.username as string;
   const router = useRouter();
   const { user: currentUser } = useAuth();
-  const { t, language } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Translation states
+  // Dynamic UGC Translation states
   const [translatedBio, setTranslatedBio] = useState<string | null>(null);
   const [translatedRole, setTranslatedRole] = useState<string | null>(null);
+  const [translatedOrg, setTranslatedOrg] = useState<string | null>(null);
+  const [customSkillTranslations, setCustomSkillTranslations] = useState<Record<string, string>>({});
   const [isTranslating, setIsTranslating] = useState(false);
-  const [activeTranslationLang, setActiveTranslationLang] = useState<string | null>(null);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   // Copy notification
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // 1. Fetch profile from database
   useEffect(() => {
     async function loadProfile() {
       if (!username) return;
@@ -72,30 +80,64 @@ export default function PublicProfilePage() {
     loadProfile();
   }, [username, t.profile.notFoundTitle]);
 
-  const handleTranslate = async (targetLang: 'en' | 'fr' | 'ko') => {
-    if (!profile) return;
-    if (activeTranslationLang === targetLang) {
-      // Reset translation
-      setTranslatedBio(null);
-      setTranslatedRole(null);
-      setActiveTranslationLang(null);
-      return;
-    }
+  // 2. Fetch and apply Dynamic UGC Translation when active platform language changes
+  const fetchUgcTranslation = useCallback(
+    async (targetLang: 'en' | 'fr' | 'ko', prof: UserProfile) => {
+      const sourceLang = (prof.preferredLanguage?.toLowerCase() || 'en') as 'en' | 'fr' | 'ko';
 
-    setIsTranslating(true);
-    try {
-      const [bioTrans, roleTrans] = await Promise.all([
-        translateProfileText(profile.bio || '', targetLang),
-        translateProfileText(profile.role || '', targetLang),
-      ]);
-      setTranslatedBio(bioTrans);
-      setTranslatedRole(roleTrans);
-      setActiveTranslationLang(targetLang);
-    } catch (err) {
-      console.error('Translation error:', err);
-    } finally {
-      setIsTranslating(false);
+      // If target language is the original source language, reset to original (0 API calls)
+      if (targetLang === sourceLang) {
+        setTranslatedBio(null);
+        setTranslatedRole(null);
+        setTranslatedOrg(null);
+        setCustomSkillTranslations({});
+        setIsTranslating(false);
+        return;
+      }
+
+      setIsTranslating(true);
+      try {
+        const res = await fetch(
+          `/api/profile/translate?username=${encodeURIComponent(prof.username)}&lang=${targetLang}`,
+          { cache: 'no-store' }
+        );
+
+        if (res.ok) {
+          const data = await res.json();
+          const trans = data?.data?.translations || {};
+          if (trans.bio) setTranslatedBio(trans.bio);
+          if (trans.role) setTranslatedRole(trans.role);
+          if (trans.organisation) setTranslatedOrg(trans.organisation);
+
+          // Extract any custom skill translations
+          const customMap: Record<string, string> = {};
+          for (const [k, v] of Object.entries(trans)) {
+            if (k.startsWith('custom_skill:')) {
+              const originalSkill = k.replace('custom_skill:', '');
+              customMap[originalSkill] = v as string;
+            }
+          }
+          setCustomSkillTranslations(customMap);
+        }
+      } catch (err) {
+        console.error('Translation fetch error:', err);
+      } finally {
+        setIsTranslating(false);
+      }
+    },
+    []
+  );
+
+  // Sync UGC translations with active platform language
+  useEffect(() => {
+    if (profile && !showOriginal) {
+      fetchUgcTranslation(language, profile);
     }
+  }, [language, profile, showOriginal, fetchUgcTranslation]);
+
+  const handleLanguageToggle = (targetLang: 'en' | 'fr' | 'ko') => {
+    setShowOriginal(false);
+    setLanguage(targetLang);
   };
 
   const handleCopyProfileLink = async () => {
@@ -146,6 +188,21 @@ export default function PublicProfilePage() {
   }
 
   const isOwner = currentUser?.id === profile.id;
+  const originalLang = (profile.preferredLanguage?.toLowerCase() || 'en') as 'en' | 'fr' | 'ko';
+  const isViewingTranslation = !showOriginal && language !== originalLang;
+
+  const displayBio = showOriginal
+    ? profile.bio
+    : (translatedBio || profile.bio || '');
+
+  const displayRole = showOriginal
+    ? profile.role
+    : (translatedRole || profile.role || 'Professional');
+
+  const displayOrg = showOriginal
+    ? profile.organisation
+    : (translatedOrg || profile.organisation || '');
+
   const linkedInLink = profile.links?.find((l) => l.platform === 'linkedin');
   const websiteLink = profile.links?.find((l) => l.platform === 'website');
   const githubLink = profile.links?.find((l) => l.platform === 'github');
@@ -206,7 +263,7 @@ export default function PublicProfilePage() {
           </div>
         )}
 
-        {/* Profile Card Header */}
+        {/* Profile Header Card */}
         <div className="surface-card rounded-3xl p-6 sm:p-10 border border-slate-200 bg-white shadow-xs mb-8">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
             
@@ -244,13 +301,20 @@ export default function PublicProfilePage() {
                 </div>
 
                 <p className="font-display font-semibold text-lg text-brand-600">
-                  {translatedRole || profile.role || 'Professional'}
+                  {isTranslating ? (
+                    <span className="inline-flex items-center gap-2 text-slate-400 animate-pulse">
+                      <span className="w-3 h-3 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                      <span>Translating role...</span>
+                    </span>
+                  ) : (
+                    displayRole
+                  )}
                 </p>
 
-                {profile.organisation && (
+                {displayOrg && (
                   <p className="text-sm font-medium text-slate-600 flex items-center justify-center sm:justify-start gap-1.5">
                     <Briefcase className="w-4 h-4 text-slate-400" />
-                    <span>{profile.organisation}</span>
+                    <span>{displayOrg}</span>
                   </p>
                 )}
 
@@ -273,15 +337,15 @@ export default function PublicProfilePage() {
                   </p>
                 )}
 
-                {/* Categories badges */}
+                {/* Localized Categories badges */}
                 {profile.categories.length > 0 && (
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-2">
                     {profile.categories.map((cat) => (
                       <span
                         key={cat.id}
-                        className="badge-pill bg-slate-100 text-slate-700 text-xs py-0.5 px-2.5 border-slate-200"
+                        className="badge-pill bg-slate-100 text-slate-700 text-xs py-0.5 px-2.5 border-slate-200 font-medium"
                       >
-                        {cat.name}
+                        {getLocalizedCategoryName(cat.name, language)}
                       </span>
                     ))}
                   </div>
@@ -377,44 +441,75 @@ export default function PublicProfilePage() {
 
           {/* Translation Viewer Bar */}
           <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs text-slate-600">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
               <Languages className="w-4 h-4 text-brand-500" />
               <span className="font-semibold">{t.profile.translateTitle}:</span>
               <span className="text-slate-400">
-                ({t.profile.originalLanguage}: {profile.preferredLanguage?.toUpperCase() || 'EN'})
+                ({t.profile.originalLanguage}: {originalLang.toUpperCase()})
               </span>
+
+              {isViewingTranslation && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <Sparkles className="w-3 h-3" />
+                  <span>
+                    {language === 'fr'
+                      ? 'Traduit automatiquement'
+                      : language === 'ko'
+                      ? '자동 번역됨'
+                      : 'Translated dynamically'}
+                  </span>
+                </span>
+              )}
             </div>
 
-            <div className="flex items-center gap-1.5">
-              {(['en', 'fr', 'ko'] as const).map((langCode) => (
-                <button
-                  key={langCode}
-                  onClick={() => handleTranslate(langCode)}
-                  disabled={isTranslating}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                    activeTranslationLang === langCode
-                      ? 'bg-brand-500 text-white shadow-brand-sm'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  {isTranslating && activeTranslationLang === langCode
-                    ? t.profile.translating
-                    : langCode.toUpperCase()}
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/80">
+                {(['en', 'fr', 'ko'] as const).map((langCode) => (
+                  <button
+                    key={langCode}
+                    onClick={() => handleLanguageToggle(langCode)}
+                    disabled={isTranslating}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                      language === langCode && !showOriginal
+                        ? 'bg-brand-500 text-white shadow-brand-sm'
+                        : 'text-slate-600 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    {isTranslating && language === langCode ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <span>...</span>
+                      </span>
+                    ) : (
+                      langCode.toUpperCase()
+                    )}
+                  </button>
+                ))}
+              </div>
 
-              {activeTranslationLang && (
+              {isViewingTranslation ? (
                 <button
-                  onClick={() => {
-                    setTranslatedBio(null);
-                    setTranslatedRole(null);
-                    setActiveTranslationLang(null);
-                  }}
-                  className="text-xs text-rose-500 hover:underline ml-2 font-semibold"
+                  onClick={() => setShowOriginal(true)}
+                  className="text-xs text-brand-600 hover:underline font-semibold px-2 py-1"
                 >
-                  {t.profile.resetTranslation}
+                  {language === 'fr'
+                    ? 'Afficher l’original'
+                    : language === 'ko'
+                    ? '원문 보기'
+                    : 'Show Original'}
                 </button>
-              )}
+              ) : showOriginal && language !== originalLang ? (
+                <button
+                  onClick={() => setShowOriginal(false)}
+                  className="text-xs text-brand-600 hover:underline font-semibold px-2 py-1"
+                >
+                  {language === 'fr'
+                    ? 'Voir la traduction'
+                    : language === 'ko'
+                    ? '번역본 보기'
+                    : 'View Translation'}
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -431,15 +526,25 @@ export default function PublicProfilePage() {
                 <h3 className="font-display font-bold text-lg text-slate-900">
                   {t.profile.aboutTitle}
                 </h3>
-                {activeTranslationLang && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    {t.profile.translatedBadge} ({activeTranslationLang.toUpperCase()})
+                {isViewingTranslation && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    <span>{language.toUpperCase()}</span>
                   </span>
                 )}
               </div>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed whitespace-pre-line">
-                {translatedBio || profile.bio || 'No professional bio provided yet.'}
-              </p>
+
+              {isTranslating ? (
+                <div className="space-y-2 py-4 animate-pulse">
+                  <div className="h-3.5 bg-slate-200 rounded w-full" />
+                  <div className="h-3.5 bg-slate-200 rounded w-5/6" />
+                  <div className="h-3.5 bg-slate-200 rounded w-4/6" />
+                </div>
+              ) : (
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed whitespace-pre-line">
+                  {displayBio || 'No professional bio provided yet.'}
+                </p>
+              )}
             </div>
 
             {/* Languages */}
@@ -484,14 +589,21 @@ export default function PublicProfilePage() {
               </p>
               {profile.skills.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((skill) => (
-                    <span
-                      key={skill.id}
-                      className="badge-pill text-xs py-1.5 px-3 bg-brand-50 text-brand-700 font-semibold"
-                    >
-                      {skill.name}
-                    </span>
-                  ))}
+                  {profile.skills.map((skill) => {
+                    // Resolve localized skill name: standard dictionary first, or dynamic custom translation
+                    const localizedSkillName = showOriginal
+                      ? skill.name
+                      : (customSkillTranslations[skill.name] || getLocalizedSkillName(skill.name, language));
+
+                    return (
+                      <span
+                        key={skill.id}
+                        className="badge-pill text-xs py-1.5 px-3 bg-brand-50 text-brand-700 font-semibold"
+                      >
+                        {localizedSkillName}
+                      </span>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-xs text-slate-400 italic">No skills listed yet.</p>
@@ -511,14 +623,20 @@ export default function PublicProfilePage() {
               </p>
               {profile.interests.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {profile.interests.map((interest) => (
-                    <span
-                      key={interest.id}
-                      className="badge-pill badge-interest text-xs py-1.5 px-3"
-                    >
-                      {interest.name}
-                    </span>
-                  ))}
+                  {profile.interests.map((interest) => {
+                    const localizedInterestName = showOriginal
+                      ? interest.name
+                      : getLocalizedInterestName(interest.name, language);
+
+                    return (
+                      <span
+                        key={interest.id}
+                        className="badge-pill badge-interest text-xs py-1.5 px-3"
+                      >
+                        {localizedInterestName}
+                      </span>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-xs text-slate-400 italic">No areas of interest listed yet.</p>

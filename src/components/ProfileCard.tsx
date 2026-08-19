@@ -6,13 +6,18 @@ import { UserProfile } from '@/lib/types';
 import { MapPin, ArrowUpRight, Globe, Linkedin, Briefcase, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
+import {
+  getLocalizedCategoryName,
+  getLocalizedSkillName,
+  getLocalizedInterestName,
+} from '@/lib/taxonomy-translations';
 
 interface ProfileCardProps {
   profile: UserProfile;
 }
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user: currentUser } = useAuth();
 
   if (!profile) return null;
@@ -113,7 +118,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
                 key={cat.id}
                 className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/80 group-hover:border-brand-200 transition-colors"
               >
-                {cat.name}
+                {getLocalizedCategoryName(cat.name, language)}
               </span>
             ))}
             {categories.length > 2 && (
@@ -134,9 +139,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
               {skills.slice(0, 3).map((skill) => (
                 <span
                   key={skill.id}
-                  className="badge-pill text-[11px] py-0.5 px-2"
+                  className="badge-pill text-[11px] py-0.5 px-2 font-medium"
                 >
-                  {skill.name}
+                  {getLocalizedSkillName(skill.name, language)}
                 </span>
               ))}
               {skills.length > 3 && (
@@ -158,9 +163,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
               {interests.slice(0, 2).map((interest) => (
                 <span
                   key={interest.id}
-                  className="badge-pill badge-interest text-[11px] py-0.5 px-2"
+                  className="badge-pill badge-interest text-[11px] py-0.5 px-2 font-medium"
                 >
-                  {interest.name}
+                  {getLocalizedInterestName(interest.name, language)}
                 </span>
               ))}
               {interests.length > 2 && (

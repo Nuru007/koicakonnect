@@ -1022,6 +1022,67 @@ class DatabaseManager {
     const profiles = await Promise.all(users.map(u => this.assembleUserProfile(u)));
     return profiles.map(sanitizeSessionUser);
   }
+
+  // --- Dynamic Profile UGC Translations Cache Operations ---
+  public async getFieldTranslations(
+    userId: string,
+    language: string
+  ): Promise<Record<string, { translatedText: string; sourceHash: string }>> {
+    try {
+      const { data, error } = await supabase
+        .from('profile_translations')
+        .select('field, translated_text, source_hash')
+        .eq('user_id', userId)
+        .eq('language', language.toLowerCase());
+
+      if (error || !data) return {};
+
+      const map: Record<string, { translatedText: string; sourceHash: string }> = {};
+      for (const row of data) {
+        map[row.field] = {
+          translatedText: row.translated_text,
+          sourceHash: row.source_hash,
+        };
+      }
+      return map;
+    } catch (err) {
+      console.error('Error fetching cached translations:', err);
+      return {};
+    }
+  }
+
+  public async upsertFieldTranslations(
+    records: Array<{
+      userId: string;
+      field: string;
+      language: string;
+      translatedText: string;
+      sourceHash: string;
+    }>
+  ): Promise<void> {
+    if (!records || records.length === 0) return;
+
+    try {
+      const payload = records.map((r) => ({
+        user_id: r.userId,
+        field: r.field,
+        language: r.language.toLowerCase(),
+        translated_text: r.translatedText,
+        source_hash: r.sourceHash,
+        updated_at: new Date().toISOString(),
+      }));
+
+      const { error } = await supabase
+        .from('profile_translations')
+        .upsert(payload, { onConflict: 'user_id,field,language' });
+
+      if (error) {
+        console.error('Error upserting profile translations:', error.message);
+      }
+    } catch (err) {
+      console.error('Error in upsertFieldTranslations:', err);
+    }
+  }
 }
 
 export const db = new DatabaseManager();
