@@ -8,7 +8,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { QRCard } from '@/components/QRCard';
 import { ProfileCard } from '@/components/ProfileCard';
 import {
-  Sparkles,
   Edit3,
   QrCode,
   Globe,
@@ -33,7 +32,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFBFF] py-16 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] py-16 flex items-center justify-center">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -90,11 +89,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] py-10 sm:py-16">
-      
-      {/* Background ambient lighting */}
-      <div className="hero-glow-bg opacity-60 pointer-events-none" />
-
+    <div className="min-h-screen bg-[#F8FAFC] py-10 sm:py-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Welcome Header */}
@@ -117,7 +112,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <Link
               href={`/profile/${user.username}`}
-              className="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+              className="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               <span>{t.dashboard.viewPublicProfile}</span>
@@ -136,7 +131,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           
           {/* Profile Visibility State */}
-          <div className="glass-card rounded-3xl p-6 border border-slate-200/80 bg-white/95 shadow-sm flex flex-col justify-between">
+          <div className="surface-card rounded-3xl p-6 border border-slate-200 bg-white shadow-xs flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -174,7 +169,7 @@ export default function DashboardPage() {
                   disabled={updatingStatus}
                   className="w-full btn-primary py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-brand-sm"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>{updatingStatus ? 'Updating...' : t.dashboard.publishNow}</span>
                 </button>
               ) : (
@@ -190,7 +185,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Profile Completeness Score */}
-          <div className="md:col-span-2 glass-card rounded-3xl p-6 border border-slate-200/80 bg-white/95 shadow-sm flex flex-col justify-between">
+          <div className="md:col-span-2 surface-card rounded-3xl p-6 border border-slate-200 bg-white shadow-xs flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -204,7 +199,7 @@ export default function DashboardPage() {
               {/* Progress Bar */}
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-4">
                 <div
-                  className="h-full bg-gradient-to-r from-brand-500 to-brand-400 rounded-full transition-all duration-500"
+                  className="h-full bg-brand-500 rounded-full transition-all duration-500"
                   style={{ width: `${completenessPercentage}%` }}
                 />
               </div>

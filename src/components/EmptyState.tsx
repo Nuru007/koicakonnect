@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Sparkles, Users, SearchX, ArrowRight } from 'lucide-react';
+import { Users, SearchX, ArrowRight, Compass } from 'lucide-react';
 
 interface EmptyStateProps {
   type?: 'empty-network' | 'no-results' | 'custom';
@@ -28,23 +28,20 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   onSecondaryAction,
 }) => {
   return (
-    <div className="w-full max-w-xl mx-auto text-center py-16 px-6 glass-card rounded-3xl border border-slate-200/80 bg-white/90 shadow-sm relative overflow-hidden my-8">
-      {/* Background ambient lighting */}
-      <div className="absolute inset-0 bg-radial-glow opacity-60 pointer-events-none" />
-
+    <div className="w-full max-w-xl mx-auto text-center py-16 px-6 surface-card rounded-3xl border border-slate-200 bg-white shadow-xs relative overflow-hidden my-8">
       <div className="relative z-10 flex flex-col items-center">
-        {/* Glowing Icon Pill */}
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-500/15 to-brand-400/20 border border-brand-500/30 flex items-center justify-center text-brand-500 mb-6 shadow-glow animate-pulse-glow">
+        {/* Icon Container */}
+        <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 text-brand-600 flex items-center justify-center mb-5">
           {type === 'empty-network' ? (
-            <Sparkles className="w-8 h-8 text-brand-500" />
+            <Compass className="w-7 h-7 text-brand-600" />
           ) : type === 'no-results' ? (
-            <SearchX className="w-8 h-8 text-slate-500" />
+            <SearchX className="w-7 h-7 text-slate-500" />
           ) : (
-            <Users className="w-8 h-8 text-brand-500" />
+            <Users className="w-7 h-7 text-brand-600" />
           )}
         </div>
 
-        <h3 className="font-display font-bold text-2xl text-slate-900 mb-3 tracking-tight">
+        <h3 className="font-display font-bold text-2xl text-slate-900 mb-2.5 tracking-tight">
           {title}
         </h3>
 
@@ -57,7 +54,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             primaryActionHref ? (
               <Link
                 href={primaryActionHref}
-                className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
+                className="btn-primary px-6 py-3 rounded-xl text-xs font-bold inline-flex items-center gap-2"
               >
                 <span>{primaryActionText}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -65,7 +62,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             ) : (
               <button
                 onClick={onPrimaryAction}
-                className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
+                className="btn-primary px-6 py-3 rounded-xl text-xs font-bold inline-flex items-center gap-2"
               >
                 <span>{primaryActionText}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -77,14 +74,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             secondaryActionHref ? (
               <Link
                 href={secondaryActionHref}
-                className="btn-secondary px-5 py-3 rounded-xl text-sm font-semibold"
+                className="btn-secondary px-5 py-3 rounded-xl text-xs font-semibold"
               >
                 {secondaryActionText}
               </Link>
             ) : (
               <button
                 onClick={onSecondaryAction}
-                className="btn-secondary px-5 py-3 rounded-xl text-sm font-semibold"
+                className="btn-secondary px-5 py-3 rounded-xl text-xs font-semibold"
               >
                 {secondaryActionText}
               </button>

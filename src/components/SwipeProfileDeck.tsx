@@ -8,11 +8,11 @@ import {
   Briefcase,
   ArrowUpRight,
   RotateCcw,
-  Sparkles,
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
   Compass,
+  Users,
 } from 'lucide-react';
 
 interface SwipeProfileDeckProps {
@@ -123,14 +123,14 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
       
       {/* Top Deck Counter */}
       <div className="w-full flex items-center justify-between mb-4 px-2">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
-          <Sparkles className="w-3.5 h-3.5 text-brand-500" />
-          <span>Recently Joined Showcase</span>
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+          <Users className="w-4 h-4 text-brand-600" />
+          <span>Recently Joined Directory</span>
         </div>
 
         <div className="flex items-center gap-2">
           {!isDeckFinished && (
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-600 border border-brand-200">
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-brand-50 text-brand-600 border border-brand-100">
               {currentIndex + 1} of {profiles.length}
             </span>
           )}
@@ -141,15 +141,15 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
       <div className="relative w-full h-[490px] sm:h-[530px] flex items-center justify-center">
         {isDeckFinished ? (
           /* End of Deck State */
-          <div className="w-full h-full glass-card rounded-3xl p-8 flex flex-col items-center justify-center text-center border border-slate-200/80 bg-white/95 shadow-xl animate-in zoom-in-95 duration-300">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-400 text-white flex items-center justify-center mb-4 shadow-brand-md">
-              <Compass className="w-8 h-8" />
+          <div className="w-full h-full surface-card rounded-3xl p-8 flex flex-col items-center justify-center text-center border border-slate-200 bg-white shadow-lg animate-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 border border-brand-100 flex items-center justify-center mb-4">
+              <Compass className="w-7 h-7" />
             </div>
             <h3 className="font-display font-extrabold text-xl sm:text-2xl text-slate-900 mb-2">
-              You’ve explored all recently joined talent!
+              You've explored all recently joined leaders
             </h3>
             <p className="text-xs sm:text-sm text-slate-500 max-w-xs mb-6 leading-relaxed">
-              Explore our full directory to search by skill, category, and country.
+              Explore our full directory to filter by country, skill, and focus discipline.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
@@ -215,7 +215,7 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
                   transition: isDragging && isTop ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.3s ease',
                   touchAction: 'none',
                 }}
-                className={`absolute inset-0 rounded-3xl overflow-hidden shadow-2xl border border-slate-200/90 bg-slate-900 group ${
+                className={`absolute inset-0 rounded-3xl overflow-hidden shadow-xl border border-slate-200/90 bg-slate-900 group ${
                   isTop ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
                 }`}
               >
@@ -229,17 +229,17 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-brand-600 via-brand-700 to-slate-950 flex flex-col items-center justify-center text-white p-6">
-                    <div className="w-24 h-24 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center font-display font-black text-4xl shadow-inner mb-3">
+                    <div className="w-24 h-24 rounded-3xl bg-white/20 flex items-center justify-center font-display font-black text-4xl shadow-inner mb-3">
                       {getInitials(profile.name)}
                     </div>
-                    <span className="text-xs font-semibold text-brand-200">Koica Connect Professional</span>
+                    <span className="text-xs font-semibold text-brand-200">KOICA CONNECT Professional</span>
                   </div>
                 )}
 
                 {/* Top Floating Badges (Location & Verified) */}
                 <div className="absolute top-4 inset-x-4 flex items-center justify-between z-10 pointer-events-none">
                   {(profile.city || profile.country) ? (
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/60 backdrop-blur-md border border-white/20 text-white text-xs font-medium shadow-md">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/70 border border-white/20 text-white text-xs font-medium shadow-sm">
                       <MapPin className="w-3.5 h-3.5 text-brand-400 flex-shrink-0" />
                       <span className="truncate max-w-[150px]">
                         {[profile.city, profile.country].filter(Boolean).join(', ')}
@@ -249,7 +249,7 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
                     <div />
                   )}
 
-                  <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/80 backdrop-blur-md text-white text-[11px] font-bold shadow-md border border-white/20">
+                  <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-bold shadow-sm border border-emerald-400/40">
                     <ShieldCheck className="w-3.5 h-3.5" />
                     <span>Verified</span>
                   </div>
@@ -264,10 +264,10 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
                     style={{ opacity: Math.min(Math.abs(dragOffset.x) / 70, 1) }}
                   >
                     <div
-                      className={`px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider backdrop-blur-md shadow-2xl border ${
+                      className={`px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider shadow-xl border ${
                         dragOffset.x > 0
-                          ? 'bg-brand-500/90 text-white border-brand-300'
-                          : 'bg-slate-900/90 text-white border-slate-600'
+                          ? 'bg-brand-500 text-white border-brand-300'
+                          : 'bg-slate-900 text-white border-slate-700'
                       }`}
                     >
                       {dragOffset.x > 0 ? 'Next Profile ➔' : 'Skip ✕'}
@@ -284,7 +284,7 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
                       {profile.categories.slice(0, 2).map((cat) => (
                         <span
                           key={cat.id}
-                          className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 backdrop-blur-md text-brand-200 border border-white/10"
+                          className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-white/20 text-brand-200 border border-white/10"
                         >
                           {cat.name}
                         </span>
@@ -314,7 +314,7 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
                       {profile.skills.slice(0, 3).map((s) => (
                         <span
                           key={s.id}
-                          className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800/80 text-slate-200 border border-white/10"
+                          className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-200 border border-slate-700"
                         >
                           {s.name}
                         </span>
@@ -343,7 +343,7 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
             onClick={handlePrev}
             disabled={currentIndex === 0}
             aria-label="Previous profile"
-            className="w-12 h-12 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 disabled:opacity-40 disabled:hover:border-slate-200 flex items-center justify-center shadow-sm transition-all hover:scale-105 active:scale-95 flex-shrink-0"
+            className="w-12 h-12 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 disabled:opacity-40 disabled:hover:border-slate-200 flex items-center justify-center shadow-xs transition-all hover:scale-105 active:scale-95 flex-shrink-0"
             title="Previous profile"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -352,7 +352,7 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
           {/* Primary View Profile CTA */}
           <Link
             href={`/profile/${activeProfile.username}`}
-            className="flex-1 btn-primary py-3 px-6 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-brand-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="flex-1 btn-primary py-3 px-6 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-brand-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <span>View Full Profile</span>
             <ArrowUpRight className="w-4 h-4" />
@@ -363,7 +363,7 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
             type="button"
             onClick={() => handleSwipe('right')}
             aria-label="Next profile"
-            className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 hover:bg-brand-500 text-brand-600 hover:text-white flex items-center justify-center shadow-sm transition-all hover:scale-105 active:scale-95 flex-shrink-0 group/next"
+            className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 hover:bg-brand-500 text-brand-600 hover:text-white flex items-center justify-center shadow-xs transition-all hover:scale-105 active:scale-95 flex-shrink-0 group/next"
             title="Next profile"
           >
             <ChevronRight className="w-5 h-5 transition-transform group-hover/next:translate-x-0.5" />
@@ -381,7 +381,7 @@ export const SwipeProfileDeck: React.FC<SwipeProfileDeckProps> = ({ profiles }) 
                 idx === currentIndex
                   ? 'w-6 bg-brand-500'
                   : idx < currentIndex
-                  ? 'w-1.5 bg-slate-300'
+                  ? 'w-1.5 bg-slate-400'
                   : 'w-1.5 bg-slate-200'
               }`}
             />

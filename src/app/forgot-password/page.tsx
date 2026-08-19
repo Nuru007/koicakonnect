@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { Sparkles, Mail, ArrowLeft, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Network, Mail, ArrowLeft, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
   const { forgotPassword } = useAuth();
@@ -30,28 +30,24 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#FAFBFF]">
-      
-      {/* Background ambient lighting */}
-      <div className="hero-glow-bg opacity-75 pointer-events-none" />
-
-      <div className="max-w-md w-full glass-card rounded-3xl p-8 sm:p-10 border border-slate-200/80 bg-white/95 shadow-xl relative z-10">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#F8FAFC]">
+      <div className="max-w-md w-full surface-card rounded-3xl p-8 sm:p-10 border border-slate-200 bg-white shadow-xs relative z-10">
         
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-400 flex items-center justify-center text-white shadow-brand-sm">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-brand-sm">
+              <Network className="w-5 h-5 stroke-[2.2]" />
             </div>
             <span className="font-display font-extrabold text-2xl text-slate-900">
-              KoicaKonnect
+              KOICA CONNECT
             </span>
           </Link>
           <h2 className="font-display font-bold text-2xl sm:text-3xl text-slate-900">
             Reset Password
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Enter your email address and we'll send you instructions to reset your password.
+            Enter your email address and we&apos;ll send you instructions to reset your password.
           </p>
         </div>
 
@@ -70,7 +66,7 @@ export default function ForgotPasswordPage() {
 
             <Link
               href="/signin"
-              className="w-full btn-secondary py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm"
+              className="w-full btn-secondary py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back to Sign In</span>
@@ -108,7 +104,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-brand-md mt-6 disabled:opacity-50 transition-all"
+              className="w-full btn-primary py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-brand-sm mt-6 disabled:opacity-50 transition-all"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

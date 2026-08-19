@@ -15,7 +15,7 @@ import {
   SlidersHorizontal,
   ChevronDown,
   ChevronUp,
-  Sparkles,
+  Compass,
   Users,
   Check,
 } from 'lucide-react';
@@ -193,19 +193,19 @@ function DiscoverContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] py-8 sm:py-12">
+    <div className="min-h-screen bg-[#F8FAFC] py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header Title Section */}
         <div className="text-center max-w-3xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-bold mb-3 border border-brand-100">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Pure Discovery Engine</span>
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-brand-600 text-xs font-bold mb-3 border border-slate-200 shadow-2xs">
+            <Compass className="w-3.5 h-3.5" />
+            <span>Cohort Directory & Discovery</span>
           </div>
           <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-slate-900 tracking-tight mb-3">
             {t.discover.title}
           </h1>
-          <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto">
             {t.discover.subtitle}
           </p>
         </div>

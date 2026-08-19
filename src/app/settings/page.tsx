@@ -118,10 +118,10 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] py-10 sm:py-16">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F8FAFC] py-10 sm:py-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Breadcrumb */}
+        {/* Navigation Breadcrumb */}
         <div className="mb-6">
           <Link
             href="/dashboard"
@@ -159,7 +159,7 @@ export default function SettingsPage() {
         <form onSubmit={handleUpdatePreferences} className="space-y-6">
           
           {/* Account Profile Details */}
-          <div className="glass-card rounded-3xl p-6 sm:p-8 border border-slate-200/80 bg-white shadow-sm space-y-4">
+          <div className="surface-card rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-xs space-y-4">
             <h3 className="font-display font-bold text-base text-slate-900 flex items-center gap-2">
               <Shield className="w-4 h-4 text-brand-500" />
               <span>Identity & Account</span>
@@ -193,73 +193,73 @@ export default function SettingsPage() {
           </div>
 
           {/* Visibility & Discoverability Preference */}
-          <div className="glass-card rounded-3xl p-6 sm:p-8 border border-slate-200/80 bg-white shadow-sm space-y-5">
+          <div className="surface-card rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-xs space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="font-display font-bold text-base text-slate-900 flex items-center gap-2">
                 <Eye className="w-4 h-4 text-brand-500" />
                 <span>Discovery Visibility & Status</span>
               </h3>
-
-              {status === 'published' && isDiscoverable ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Active on Discover
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
-                  Hidden from Discover
-                </span>
-              )}
             </div>
 
-            {/* Discoverability Switch */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-900">Include Profile in Discover Directory</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Allow other professionals to find you across skills, categories, and keyword searches.
-                </p>
-              </div>
-
-              <label className="relative inline-flex items-center cursor-pointer">
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-slate-200 hover:border-brand-200 transition-colors cursor-pointer bg-slate-50/50">
                 <input
-                  type="checkbox"
-                  checked={isDiscoverable}
-                  onChange={(e) => setIsDiscoverable(e.target.checked)}
-                  className="sr-only peer"
+                  type="radio"
+                  name="status"
+                  value="published"
+                  checked={status === 'published'}
+                  onChange={() => setStatus('published')}
+                  className="mt-1 text-brand-600 focus:ring-brand-500"
                 />
-                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Published (Public)</span>
+                  <span className="text-[11px] text-slate-500 block leading-relaxed">
+                    Your profile is live and discoverable in global directory search, categories, and country filters.
+                  </span>
+                </div>
               </label>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              {[
-                { id: 'published', title: 'Published & Public', desc: 'Live public profile URL & search' },
-                { id: 'draft', title: 'Draft Mode', desc: 'Hidden from discovery' },
-                { id: 'private', title: 'Private', desc: 'Visible only to you' },
-              ].map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setStatus(opt.id as any)}
-                  className={`p-4 rounded-2xl border text-left transition-all ${
-                    status === opt.id
-                      ? 'bg-brand-50 border-brand-500 ring-2 ring-brand-500/20 text-brand-900 font-bold'
-                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  <p className="text-xs font-bold mb-0.5">{opt.title}</p>
-                  <p className="text-[11px] text-slate-400 font-normal">{opt.desc}</p>
-                </button>
-              ))}
+              <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-slate-200 hover:border-brand-200 transition-colors cursor-pointer bg-slate-50/50">
+                <input
+                  type="radio"
+                  name="status"
+                  value="draft"
+                  checked={status === 'draft'}
+                  onChange={() => setStatus('draft')}
+                  className="mt-1 text-brand-600 focus:ring-brand-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Draft / Unlisted</span>
+                  <span className="text-[11px] text-slate-500 block leading-relaxed">
+                    Your profile is hidden from the public directory. Only accessible via your direct link.
+                  </span>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-slate-200 hover:border-brand-200 transition-colors cursor-pointer bg-slate-50/50">
+                <input
+                  type="radio"
+                  name="status"
+                  value="private"
+                  checked={status === 'private'}
+                  onChange={() => setStatus('private')}
+                  className="mt-1 text-brand-600 focus:ring-brand-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Private</span>
+                  <span className="text-[11px] text-slate-500 block leading-relaxed">
+                    Your profile is completely private. No one can view your profile except you when logged in.
+                  </span>
+                </div>
+              </label>
             </div>
           </div>
 
           {/* Preferred Language */}
-          <div className="glass-card rounded-3xl p-6 sm:p-8 border border-slate-200/80 bg-white shadow-sm space-y-4">
+          <div className="surface-card rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-xs space-y-4">
             <h3 className="font-display font-bold text-base text-slate-900 flex items-center gap-2">
               <Globe className="w-4 h-4 text-brand-500" />
-              <span>Preferred Profile Language</span>
+              <span>Language Preference</span>
             </h3>
 
             <div className="grid grid-cols-3 gap-3">
@@ -269,27 +269,27 @@ export default function SettingsPage() {
                 { code: 'ko', label: '한국어', flag: '🇰🇷' },
               ].map((l) => (
                 <button
-                  key={l.code}
                   type="button"
+                  key={l.code}
                   onClick={() => {
                     setPreferredLang(l.code);
                     setLanguage(l.code as any);
                   }}
-                  className={`p-3 rounded-2xl border text-center transition-all ${
+                  className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
                     preferredLang === l.code
-                      ? 'bg-brand-50 border-brand-500 ring-2 ring-brand-500/20 text-brand-900 font-bold'
-                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      ? 'border-brand-500 bg-brand-50 text-brand-600 shadow-2xs'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
                   }`}
                 >
-                  <span className="text-base block mb-1">{l.flag}</span>
-                  <span className="text-xs">{l.label}</span>
+                  <span className="text-base">{l.flag}</span>
+                  <span>{l.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Change Password */}
-          <div className="glass-card rounded-3xl p-6 sm:p-8 border border-slate-200/80 bg-white shadow-sm space-y-4">
+          <div className="surface-card rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-xs space-y-4">
             <h3 className="font-display font-bold text-base text-slate-900 flex items-center gap-2">
               <Lock className="w-4 h-4 text-brand-500" />
               <span>Change Password</span>
@@ -305,7 +305,7 @@ export default function SettingsPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min 6 characters"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 rounded-xl text-xs font-medium text-slate-900 transition-all"
                 />
               </div>
 
@@ -318,50 +318,42 @@ export default function SettingsPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm new password"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 rounded-xl text-xs font-medium text-slate-900 transition-all"
                 />
               </div>
             </div>
           </div>
 
           {/* Save Button */}
-          <div className="flex items-center justify-between pt-4">
-            <button
-              type="button"
-              onClick={() => logout()}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-1.5 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
-            </button>
-
+          <div className="flex justify-end gap-3">
             <button
               type="submit"
               disabled={saving}
-              className="btn-primary px-8 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-brand-md disabled:opacity-50"
+              className="btn-primary py-3 px-8 rounded-2xl text-xs font-bold shadow-brand-sm flex items-center gap-2"
             >
-              {saving ? 'Saving...' : 'Save Settings'}
+              <Check className="w-4 h-4" />
+              <span>{saving ? 'Saving Changes...' : 'Save Settings'}</span>
             </button>
           </div>
         </form>
 
-        {/* Danger Zone: Account Deletion / Deactivation */}
+        {/* Danger Zone: Delete Account */}
         <div className="mt-12 pt-8 border-t border-slate-200">
-          <div className="rounded-3xl p-6 sm:p-8 bg-rose-50/60 border border-rose-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="surface-card rounded-3xl p-6 sm:p-8 border border-rose-200 bg-rose-50/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h4 className="font-display font-bold text-sm text-rose-900 flex items-center gap-2">
-                <Trash2 className="w-4 h-4 text-rose-600" />
-                <span>Delete Account</span>
-              </h4>
-              <p className="text-xs text-rose-700 mt-1 max-w-lg">
-                Permanently delete your profile, skills, taxonomies, and digital identity pass. This action cannot be undone.
+              <h3 className="font-display font-bold text-base text-rose-700 flex items-center gap-2">
+                <Trash2 className="w-4 h-4 text-rose-500" />
+                <span>Delete Account & Profile</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-md">
+                Permanently delete your profile, credentials, and all uploaded links. This action is irreversible.
               </p>
             </div>
 
             <button
               type="button"
               onClick={() => setShowDeleteModal(true)}
-              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-sm flex-shrink-0"
+              className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-xs flex-shrink-0"
             >
               Delete Account
             </button>
@@ -370,25 +362,22 @@ export default function SettingsPage() {
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-4">
-                <Trash2 className="w-6 h-6" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                <AlertCircle className="w-6 h-6" />
               </div>
-
-              <h3 className="font-display font-bold text-lg text-slate-900 mb-2">
+              <h3 className="font-display font-bold text-xl text-slate-900">
                 Are you absolutely sure?
               </h3>
-              <p className="text-xs text-slate-600 leading-relaxed mb-6">
-                This will permanently delete your KoicaKonnect profile and remove you from the global discovery index immediately.
+              <p className="text-xs text-slate-600 leading-relaxed">
+                This will immediately delete your user account (<span className="font-mono text-slate-900 font-bold">{user.email}</span>) and purge your profile from the discovery index.
               </p>
-
-              <div className="flex items-center justify-end gap-3">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowDeleteModal(false)}
-                  disabled={deleting}
-                  className="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700"
+                  className="btn-secondary px-4 py-2 rounded-xl text-xs font-bold"
                 >
                   Cancel
                 </button>
@@ -396,9 +385,9 @@ export default function SettingsPage() {
                   type="button"
                   onClick={handleDeleteAccount}
                   disabled={deleting}
-                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors"
                 >
-                  {deleting ? 'Deleting...' : 'Yes, Delete Account'}
+                  {deleting ? 'Deleting...' : 'Yes, Delete Everything'}
                 </button>
               </div>
             </div>

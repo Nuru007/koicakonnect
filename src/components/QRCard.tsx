@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { Download, Copy, Check, Share2, Sparkles, Shield, ArrowUpRight, ExternalLink } from 'lucide-react';
+import { Download, Copy, Check, Share2, Shield, Network } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -70,8 +70,8 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${profile.name} - KoicaKonnect Profile`,
-          text: `Discover ${profile.name} (${profile.role || 'Professional'}) on KoicaKonnect`,
+          title: `${profile.name} - KOICA CONNECT Profile`,
+          text: `Discover ${profile.name} (${profile.role || 'Professional'}) on KOICA CONNECT`,
           url: profileUrl,
         });
       } catch {
@@ -84,11 +84,11 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
 
   if (compact) {
     return (
-      <div className="glass-card rounded-2xl p-5 border border-brand-200/60 flex flex-col items-center text-center bg-white/95 shadow-sm">
-        <div className="p-3 bg-white rounded-2xl shadow-inner border border-slate-100 mb-3">
+      <div className="surface-card rounded-2xl p-5 border border-slate-200 flex flex-col items-center text-center bg-white shadow-xs">
+        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 mb-3">
           <canvas ref={canvasRef} className="rounded-lg" />
         </div>
-        <p className="text-xs font-bold text-slate-800 mb-1">Scan to view KoicaKonnect profile</p>
+        <p className="text-xs font-bold text-slate-800 mb-0.5">Scan to view profile</p>
         <p className="text-[11px] text-slate-400 font-mono truncate max-w-[200px] mb-3">
           koicakonnect.com/profile/{profile.username}
         </p>
@@ -114,27 +114,23 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      {/* Digital NFC Pass Card */}
+      {/* Digital Pass Card */}
       <div
         ref={cardRef}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-brand-950 text-white p-7 shadow-2xl border border-white/10"
+        className="relative overflow-hidden rounded-3xl bg-slate-950 text-white p-7 shadow-xl border border-slate-800"
       >
-        {/* Glow ambient spots */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-brand-500/25 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full bg-brand-400/20 blur-3xl pointer-events-none" />
-
         {/* Card Header: Brand & Chip */}
         <div className="flex items-center justify-between mb-6 relative z-10">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-brand-500 to-brand-400 flex items-center justify-center shadow-brand-sm">
-              <Sparkles className="w-4 h-4 text-white" />
+            <div className="w-7 h-7 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-brand-sm">
+              <Network className="w-4 h-4 stroke-[2.2]" />
             </div>
-            <span className="font-display font-extrabold text-sm tracking-wide uppercase text-white/90">
-              KoicaKonnect Identity
+            <span className="font-display font-bold text-xs tracking-wider uppercase text-white/90">
+              KOICA CONNECT Pass
             </span>
           </div>
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-brand-500/20 text-brand-300 border border-brand-400/30">
-            Digital Card
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-white/10 text-brand-300 border border-white/15">
+            Digital Identity
           </span>
         </div>
 
@@ -144,10 +140,10 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
             <img
               src={profile.profileImage}
               alt={profile.name}
-              className="w-16 h-16 rounded-2xl object-cover ring-2 ring-brand-400/50 shadow-lg"
+              className="w-16 h-16 rounded-2xl object-cover ring-2 ring-brand-500 shadow-md"
             />
           ) : (
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-400 text-white flex items-center justify-center font-display font-bold text-2xl shadow-brand-md">
+            <div className="w-16 h-16 rounded-2xl bg-brand-600 text-white flex items-center justify-center font-display font-bold text-2xl shadow-brand-sm">
               {profile.name.charAt(0).toUpperCase()}
             </div>
           )}
@@ -168,15 +164,15 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
         </div>
 
         {/* QR Code Canvas container */}
-        <div className="bg-white rounded-2xl p-4 shadow-xl flex flex-col items-center justify-center relative z-10 my-4">
-          <canvas ref={canvasRef} className="rounded-lg shadow-sm" />
+        <div className="bg-white rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center relative z-10 my-4">
+          <canvas ref={canvasRef} className="rounded-lg shadow-2xs" />
           <p className="text-[11px] font-mono text-slate-500 mt-2 truncate max-w-xs">
             {profileUrl}
           </p>
         </div>
 
         {/* Card Footer */}
-        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-white/10 relative z-10">
+        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800 relative z-10">
           <span className="flex items-center gap-1">
             <Shield className="w-3.5 h-3.5 text-brand-400" />
             Verified Discovery Profile
@@ -189,7 +185,7 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 mt-5">
         <button
           onClick={handleCopyLink}
-          className="btn-secondary py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm"
+          className="btn-secondary py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs"
         >
           {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
           <span>{copied ? t.profile.copied : t.profile.copyLink}</span>
@@ -205,7 +201,7 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
 
         <button
           onClick={handleShare}
-          className="btn-secondary py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm"
+          className="btn-secondary py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs"
         >
           <Share2 className="w-4 h-4 text-brand-500" />
           <span>Share</span>

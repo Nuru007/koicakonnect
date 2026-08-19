@@ -4,7 +4,7 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Sparkles, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Network, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, ShieldAlert } from 'lucide-react';
 
 function SignInContent() {
   const { login } = useAuth();
@@ -46,7 +46,7 @@ function SignInContent() {
           <div>
             <p className="font-bold">This account is currently unavailable.</p>
             <p className="text-[11px] text-amber-800 mt-0.5">
-              Please contact Koica Connect support if you believe this is a mistake.
+              Please contact KOICA CONNECT support if you believe this is a mistake.
             </p>
           </div>
         </div>
@@ -119,7 +119,7 @@ function SignInContent() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full btn-primary py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-brand-md mt-6 disabled:opacity-50 transition-all"
+          className="w-full btn-primary py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-brand-sm mt-6 disabled:opacity-50 transition-all"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -137,28 +137,24 @@ function SignInContent() {
 
 export default function SignInPage() {
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#FAFBFF]">
-      
-      {/* Background ambient lighting */}
-      <div className="hero-glow-bg opacity-75 pointer-events-none" />
-
-      <div className="max-w-md w-full glass-card rounded-3xl p-8 sm:p-10 border border-slate-200/80 bg-white/95 shadow-xl relative z-10">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#F8FAFC]">
+      <div className="max-w-md w-full surface-card rounded-3xl p-8 sm:p-10 border border-slate-200 bg-white shadow-xs relative z-10">
         
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-400 flex items-center justify-center text-white shadow-brand-sm">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-brand-sm">
+              <Network className="w-5 h-5 stroke-[2.2]" />
             </div>
             <span className="font-display font-extrabold text-2xl text-slate-900">
-              KoicaKonnect
+              KOICA CONNECT
             </span>
           </Link>
           <h2 className="font-display font-bold text-2xl sm:text-3xl text-slate-900">
             Welcome Back
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Sign in to manage your discovery profile and QR card.
+            Sign in to manage your discovery profile and QR pass.
           </p>
         </div>
 
@@ -168,9 +164,9 @@ export default function SignInPage() {
 
         <div className="mt-6 pt-6 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-500">
-            Don't have an account yet?{' '}
+            Don&apos;t have a profile yet?{' '}
             <Link href="/signup" className="text-brand-600 font-bold hover:underline">
-              Create Profile
+              Create your profile
             </Link>
           </p>
         </div>

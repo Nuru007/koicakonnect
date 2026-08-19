@@ -12,7 +12,6 @@ import {
   User,
   FileText,
   Award,
-  Sparkles,
   Grid,
   Globe,
   Link as LinkIcon,
@@ -29,6 +28,7 @@ import {
   Camera,
   AlertCircle,
   ChevronDown,
+  Lightbulb,
 } from 'lucide-react';
 import { COUNTRIES } from '@/lib/countries';
 
@@ -348,7 +348,7 @@ export default function ProfileEditPage() {
     { id: 1, title: 'Basic Info', icon: User },
     { id: 2, title: 'About & Bio', icon: FileText },
     { id: 3, title: 'Skills', icon: Award },
-    { id: 4, title: 'Interests', icon: Sparkles },
+    { id: 4, title: 'Interests', icon: Lightbulb },
     { id: 5, title: 'Categories', icon: Grid },
     { id: 6, title: 'Languages', icon: Globe },
     { id: 7, title: 'Links', icon: LinkIcon },
@@ -357,7 +357,7 @@ export default function ProfileEditPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#FAFBFF] py-16 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] py-16 flex items-center justify-center">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -1076,9 +1076,9 @@ export default function ProfileEditPage() {
                       type="button"
                       disabled={saving}
                       onClick={() => handleSave('published')}
-                      className="btn-primary px-6 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-brand-md"
+                      className="btn-primary px-6 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-brand-sm"
                     >
-                      <Sparkles className="w-4 h-4" />
+                      <CheckCircle2 className="w-4 h-4" />
                       <span>{saving ? 'Publishing...' : 'Publish Profile Now'}</span>
                     </button>
                   ) : (

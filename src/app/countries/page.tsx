@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Globe, Users, ArrowRight, Sparkles, MapPin, Compass, ShieldCheck } from 'lucide-react';
+import { Globe, Users, ArrowRight, Compass, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { PRIMARY_AFRICAN_COUNTRIES, getCountryFlag, getCountryFlagImg, getCountryOption, normalizeCountry } from '@/lib/countries';
 
@@ -78,12 +78,12 @@ export default function CountriesPage() {
   const activeCountriesCount = countriesWithCounts.filter((c) => c.count > 0).length;
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] py-12 sm:py-16">
+    <div className="min-h-screen bg-[#F8FAFC] py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header Title & Badges */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-bold mb-3 border border-brand-100 shadow-2xs">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-brand-600 text-xs font-bold mb-3 border border-slate-200 shadow-2xs">
             <Globe className="w-3.5 h-3.5" />
             <span>Global Directory & Cohort Hubs</span>
           </div>
@@ -95,17 +95,17 @@ export default function CountriesPage() {
           </p>
 
           {/* Quick Metrics Strip */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs text-xs font-medium text-slate-700">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs text-xs font-medium text-slate-700">
               <Users className="w-3.5 h-3.5 text-brand-500" />
               <span><strong>{totalPublished}</strong> Published Leaders</span>
             </div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs text-xs font-medium text-slate-700">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs text-xs font-medium text-slate-700">
               <Globe className="w-3.5 h-3.5 text-brand-500" />
               <span><strong>5</strong> KOICA African Nations</span>
             </div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs text-xs font-medium text-slate-700">
-              <Sparkles className="w-3.5 h-3.5 text-brand-500" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs text-xs font-medium text-slate-700">
+              <Compass className="w-3.5 h-3.5 text-brand-500" />
               <span><strong>{activeCountriesCount}</strong> Active Countries</span>
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function CountriesPage() {
 
         {/* Section 1: KOICA Focus Partner Countries (The 5 African Nations) */}
         <div className="mb-14">
-          <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-100">
+          <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-200">
             <div>
               <h2 className="font-display font-bold text-xl sm:text-2xl text-slate-900 flex items-center gap-2">
                 <span>KOICA Focus African Nations</span>
@@ -138,7 +138,7 @@ export default function CountriesPage() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
               {[1, 2, 3, 4, 5].map((n) => (
-                <div key={n} className="h-44 rounded-3xl bg-white p-5 border border-slate-100 animate-pulse shadow-sm" />
+                <div key={n} className="h-44 rounded-3xl bg-white p-5 border border-slate-200 animate-pulse shadow-xs" />
               ))}
             </div>
           ) : (
@@ -149,10 +149,10 @@ export default function CountriesPage() {
                   <Link
                     key={country.code}
                     href={hasMembers ? `/discover?country=${encodeURIComponent(country.name)}` : `/discover`}
-                    className={`glass-card glass-card-hover rounded-3xl p-5 flex flex-col justify-between group border transition-all duration-300 relative overflow-hidden ${
+                    className={`surface-card surface-card-hover rounded-3xl p-5 flex flex-col justify-between group border transition-all duration-300 relative overflow-hidden bg-white ${
                       hasMembers
-                        ? 'border-brand-200/90 bg-white shadow-sm hover:shadow-xl hover:shadow-brand-500/10 hover:-translate-y-1'
-                        : 'border-slate-200/70 bg-white/80 hover:border-slate-300 shadow-2xs hover:bg-white'
+                        ? 'border-slate-200/90 shadow-xs hover:shadow-md hover:border-brand-400'
+                        : 'border-slate-200/60 shadow-2xs hover:border-slate-300'
                     }`}
                   >
                     {/* Top flag and region */}
@@ -174,7 +174,7 @@ export default function CountriesPage() {
                         </div>
 
                         {/* Region pill */}
-                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100 truncate">
+                        <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/60 truncate">
                           {country.region}
                         </span>
                       </div>
@@ -186,10 +186,10 @@ export default function CountriesPage() {
                     </div>
 
                     {/* Bottom member count & arrow */}
-                    <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between mt-3">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between mt-3">
                       {hasMembers ? (
                         <div className="inline-flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           <span className="text-xs font-bold text-slate-800">
                             {country.count} {country.count === 1 ? 'member' : 'members'}
                           </span>
@@ -218,7 +218,7 @@ export default function CountriesPage() {
         {/* Section 2: Other International Hubs & Registered Regions */}
         {otherActiveCountries.length > 0 && (
           <div className="mb-14">
-            <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-100">
+            <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-200">
               <div>
                 <h2 className="font-display font-bold text-xl sm:text-2xl text-slate-900 flex items-center gap-2">
                   <span>Other Global Hubs & Regions</span>
@@ -237,7 +237,7 @@ export default function CountriesPage() {
                 <Link
                   key={country.name}
                   href={`/discover?country=${encodeURIComponent(country.name)}`}
-                  className="glass-card glass-card-hover rounded-3xl p-5 flex items-center justify-between group border border-slate-200/80 bg-white/95 shadow-sm hover:shadow-md transition-all"
+                  className="surface-card surface-card-hover rounded-3xl p-5 flex items-center justify-between group border border-slate-200 bg-white shadow-xs hover:shadow-md transition-all"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="w-11 h-8 rounded-lg overflow-hidden border border-slate-200 shadow-2xs group-hover:scale-105 transition-transform flex-shrink-0 bg-slate-50 flex items-center justify-center">
@@ -255,7 +255,7 @@ export default function CountriesPage() {
                       <h3 className="font-display font-bold text-sm text-slate-900 group-hover:text-brand-600 transition-colors truncate">
                         {country.name}
                       </h3>
-                      <p className="text-xs text-slate-400 font-medium">
+                      <p className="text-xs text-slate-500 font-medium">
                         {country.count} {country.count === 1 ? 'member' : 'members'}
                       </p>
                     </div>
@@ -268,16 +268,16 @@ export default function CountriesPage() {
           </div>
         )}
 
-        {/* Global Directory Expanding / Join CTA */}
-        <div className="glass-card rounded-3xl p-8 sm:p-12 text-center max-w-2xl mx-auto border border-brand-200/60 bg-gradient-to-b from-white to-brand-50/40 shadow-sm relative overflow-hidden">
-          <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center mx-auto mb-4 shadow-brand-2xs">
-            <Sparkles className="w-7 h-7" />
+        {/* Global Directory Join CTA */}
+        <div className="surface-card rounded-3xl p-8 sm:p-12 text-center max-w-2xl mx-auto border border-slate-200 bg-white shadow-xs relative overflow-hidden">
+          <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 border border-brand-100 flex items-center justify-center mx-auto mb-4">
+            <Compass className="w-7 h-7" />
           </div>
           <h3 className="font-display font-bold text-xl sm:text-2xl text-slate-900 mb-2">
             Are you representing your country?
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 mb-6 max-w-md mx-auto leading-relaxed">
-            Create your digital identity on KoicaKonnect and showcase your expertise to fellow leaders across Africa and the world.
+            Create your digital identity on KOICA CONNECT and showcase your expertise to fellow leaders across Africa and global partner hubs.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -300,4 +300,3 @@ export default function CountriesPage() {
     </div>
   );
 }
-

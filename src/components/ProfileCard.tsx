@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { UserProfile } from '@/lib/types';
-import { MapPin, ArrowUpRight, Globe, Award, Sparkles, Linkedin } from 'lucide-react';
+import { MapPin, ArrowUpRight, Globe, Linkedin, Briefcase, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 
@@ -37,22 +37,22 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
   return (
     <Link
       href={profileHref}
-      className="glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between relative group border border-slate-200/80 hover:border-brand-500/80 bg-white/95 cursor-pointer block transition-all shadow-sm hover:shadow-xl hover:shadow-brand-500/10"
+      className="surface-card surface-card-hover rounded-3xl p-6 flex flex-col justify-between relative group bg-white border border-slate-200/90 hover:border-brand-500/60 cursor-pointer block transition-all shadow-xs hover:shadow-md"
     >
       {/* Top Header: Avatar & Main Identifiers */}
       <div>
         <div className="flex items-start gap-4 mb-4">
           {profile.profileImage ? (
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <img
                 src={profile.profileImage}
                 alt={profile.name}
-                className="w-16 h-16 rounded-2xl object-cover ring-2 ring-brand-100 shadow-sm group-hover:ring-brand-500 group-hover:scale-105 transition-all duration-300"
+                className="w-16 h-16 rounded-2xl object-cover ring-1 ring-slate-200 group-hover:ring-brand-500 group-hover:scale-105 transition-all duration-300 shadow-xs"
               />
-              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white shadow-2xs" title="Verified Profile" />
+              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white shadow-xs" title="Verified Profile" />
             </div>
           ) : (
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-400 text-white flex items-center justify-center font-display font-bold text-lg shadow-brand-sm group-hover:scale-105 transition-transform duration-300">
+            <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 border border-brand-200 flex items-center justify-center font-display font-bold text-lg shadow-xs group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
               {getInitials(profile.name)}
             </div>
           )}
@@ -75,8 +75,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
             </p>
 
             {profile.organisation && (
-              <p className="text-xs text-slate-500 truncate">
-                {profile.organisation}
+              <p className="text-xs text-slate-500 truncate flex items-center gap-1 mt-0.5">
+                <Briefcase className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                <span className="truncate">{profile.organisation}</span>
               </p>
             )}
 
@@ -91,7 +92,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
 
         {/* Bio preview if available */}
         {profile.bio && (
-          <p className="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed bg-slate-50/70 p-2.5 rounded-xl border border-slate-100 group-hover:border-brand-100 transition-colors">
+          <p className="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100 group-hover:border-brand-100 transition-colors">
             {profile.bio}
           </p>
         )}
@@ -102,7 +103,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
             {profile.categories.slice(0, 2).map((cat) => (
               <span
                 key={cat.id}
-                className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 group-hover:border-brand-200 transition-colors"
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/80 group-hover:border-brand-200 transition-colors"
               >
                 {cat.name}
               </span>
@@ -142,7 +143,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
         {/* Areas of Interest Chips */}
         {profile.interests.length > 0 && (
           <div className="mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-600 block mb-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 block mb-1.5">
               {t.discover.interests}
             </span>
             <div className="flex flex-wrap gap-1.5">
@@ -155,7 +156,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
                 </span>
               ))}
               {profile.interests.length > 2 && (
-                <span className="text-[10px] text-cyan-600 self-center font-medium">
+                <span className="text-[10px] text-sky-700 self-center font-medium">
                   +{profile.interests.length - 2}
                 </span>
               )}

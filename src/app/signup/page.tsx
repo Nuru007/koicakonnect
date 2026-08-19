@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { Sparkles, Mail, Lock, User, Briefcase, MapPin, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Network, Mail, Lock, User, Briefcase, MapPin, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2, ChevronDown } from 'lucide-react';
 import { COUNTRIES } from '@/lib/countries';
 
 export default function SignUpPage() {
@@ -72,28 +72,24 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#FAFBFF]">
-      
-      {/* Background ambient lighting */}
-      <div className="hero-glow-bg opacity-75 pointer-events-none" />
-
-      <div className="max-w-xl w-full glass-card rounded-3xl p-8 sm:p-10 border border-slate-200/80 bg-white/95 shadow-xl relative z-10">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#F8FAFC]">
+      <div className="max-w-xl w-full surface-card rounded-3xl p-8 sm:p-10 border border-slate-200 bg-white shadow-xs relative z-10">
         
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-500 to-brand-400 flex items-center justify-center text-white shadow-brand-sm">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-brand-sm">
+              <Network className="w-5 h-5 stroke-[2.2]" />
             </div>
             <span className="font-display font-extrabold text-2xl text-slate-900">
-              KoicaKonnect
+              KOICA CONNECT
             </span>
           </Link>
           <h2 className="font-display font-bold text-2xl sm:text-3xl text-slate-900">
             Create Your Profile
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-            Join the discovery network and create your digital professional identity card.
+            Join the discovery cohort and build your verified digital identity pass.
           </p>
         </div>
 
@@ -120,15 +116,28 @@ export default function SignUpPage() {
             </div>
             <Link
               href="/signin"
-              className="btn-primary py-1.5 px-3.5 rounded-xl text-xs font-bold whitespace-nowrap text-center"
+              className="btn-primary py-1.5 px-3 rounded-xl text-xs font-bold whitespace-nowrap self-end sm:self-auto"
             >
-              Sign In Instead
+              Sign In Now
             </Link>
           </div>
         )}
 
-        {/* General Error Banner */}
-        {error && errorCode !== 'EMAIL_ALREADY_EXISTS' && (
+        {/* Account Deactivated Error Banner */}
+        {errorCode === 'ACCOUNT_DEACTIVATED' && (
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-3 animate-in fade-in duration-200">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600 mt-0.5" />
+            <div>
+              <p className="font-bold">This email was associated with a deactivated account.</p>
+              <p className="text-[11px] text-rose-700 mt-0.5">
+                Please contact support if you wish to reactivate your profile.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Standard Error Banner */}
+        {error && errorCode !== 'EMAIL_ALREADY_EXISTS' && errorCode !== 'ACCOUNT_DEACTIVATED' && (
           <div className="mb-6 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
             <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
             <span>{error}</span>
@@ -136,6 +145,7 @@ export default function SignUpPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          
           {/* Full Name */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
@@ -151,79 +161,78 @@ export default function SignUpPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g. Dr. Alex Morgan"
+                placeholder="e.g. Dr. Amina Diallo"
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
               />
             </div>
           </div>
 
-          {/* Email & Password Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Email Address *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <input
-                  type="email"
-                  required
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="name@company.com"
-                  className={`w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-4 transition-all ${
-                    !isEmailValid
-                      ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10'
-                      : 'border-slate-200 focus:border-brand-500 focus:ring-brand-500/10'
-                  }`}
-                />
+          {/* Email Address */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+              Email Address *
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <Mail className="w-4 h-4" />
               </div>
-              {!isEmailValid ? (
-                <p className="text-[11px] text-rose-500 mt-1 font-medium">Please enter a valid email.</p>
-              ) : (
-                <p className="text-[10px] text-slate-400 mt-1">Stored securely in your verified Supabase account.</p>
-              )}
+              <input
+                type="email"
+                required
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="amina@university.edu"
+                className={`w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-4 transition-all ${
+                  !isEmailValid
+                    ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10'
+                    : 'border-slate-200 focus:border-brand-500 focus:ring-brand-500/10'
+                }`}
+              />
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex justify-between">
-                <span>Password *</span>
-                <span className={`text-[10px] font-normal lowercase ${formData.password.length >= 8 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
-                  (min 8 chars)
-                </span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Min 8 characters"
-                  className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
+            {!isEmailValid && (
+              <p className="text-[11px] text-rose-500 mt-1 font-medium">Please enter a valid email format</p>
+            )}
           </div>
 
-          {/* Role & Organisation Grid */}
+          {/* Password */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+              Password *
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <Lock className="w-4 h-4" />
+              </div>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Min. 8 characters"
+                className={`w-full pl-10 pr-10 py-3 bg-slate-50 border rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-4 transition-all ${
+                  formData.password.length > 0 && !isPasswordLongEnough
+                    ? 'border-amber-400 focus:border-amber-500 focus:ring-amber-500/10'
+                    : 'border-slate-200 focus:border-brand-500 focus:ring-brand-500/10'
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1">Must be at least 8 characters</p>
+          </div>
+
+          {/* Role & Organisation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Current Role / Profession *
+                Headline / Role *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -235,7 +244,7 @@ export default function SignUpPage() {
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  placeholder="e.g. AI Research Scientist"
+                  placeholder="e.g. Agritech Researcher"
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                 />
               </div>
@@ -250,7 +259,7 @@ export default function SignUpPage() {
                 name="organisation"
                 value={formData.organisation}
                 onChange={handleChange}
-                placeholder="e.g. DeepMind / Stanford"
+                placeholder="e.g. KOICA Research Hub"
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
               />
             </div>
@@ -295,7 +304,7 @@ export default function SignUpPage() {
                 name="city"
                 value={formData.city}
                 onChange={handleChange}
-                placeholder="e.g. London"
+                placeholder="e.g. Dakar"
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
               />
             </div>
@@ -304,7 +313,7 @@ export default function SignUpPage() {
           <button
             type="submit"
             disabled={loading || Boolean(successMsg)}
-            className="w-full btn-primary py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-brand-md mt-4 disabled:opacity-50 transition-all"
+            className="w-full btn-primary py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-brand-sm mt-4 disabled:opacity-50 transition-all"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

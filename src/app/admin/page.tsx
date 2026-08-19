@@ -9,7 +9,7 @@ import {
   Users,
   Grid,
   Award,
-  Sparkles,
+  Lightbulb,
   Plus,
   Trash2,
   Eye,
