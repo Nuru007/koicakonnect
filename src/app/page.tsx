@@ -17,26 +17,36 @@ import {
   Users,
   Shield,
   Layers,
-  Sparkles,
 } from 'lucide-react';
 
 export default function HomePage() {
   const { t } = useLanguage();
   const router = useRouter();
-  const [toggleState, setToggleState] = useState<'blue' | 'red'>('blue');
+  
+  // Toggle starts at 'red' and automatically transitions to 'blue' on refresh/load
+  const [toggleColor, setToggleColor] = useState<'blue' | 'red'>('red');
   const [searchQuery, setSearchQuery] = useState('');
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [categories, setCategories] = useState<Category[]>([]);
   const [recentUsers, setRecentUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    // Automatic refresh animation: start in red, smoothly glide to blue
+    setToggleColor('red');
+    const timer = setTimeout(() => {
+      setToggleColor('blue');
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Parallax mouse movement handler for desktop floating flags
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (typeof window !== 'undefined') {
-      const x = (e.clientX / window.innerWidth) * 2 - 1;
-      const y = (e.clientY / window.innerHeight) * 2 - 1;
-      setMousePos({ x, y });
-    }
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { clientX, clientY, currentTarget } = e;
+    const { width, height, left, top } = currentTarget.getBoundingClientRect();
+    const x = (clientX - left - width / 2) / (width / 2);
+    const y = (clientY - top - height / 2) / (height / 2);
+    setMousePos({ x, y });
   };
 
   useEffect(() => {
@@ -66,10 +76,6 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  const handleToggle = () => {
-    setToggleState((prev) => (prev === 'blue' ? 'red' : 'blue'));
-  };
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -98,8 +104,23 @@ export default function HomePage() {
       onMouseMove={handleMouseMove}
       className="relative min-h-screen overflow-x-hidden bg-[#FAFBFF]"
     >
-      {/* Background Lighting Glow */}
-      <div className="hero-glow-bg opacity-80 pointer-events-none" />
+      {/* Dynamic Atmospheric Radial Glowing Background reacting smoothly to toggle state */}
+      <div
+        className="hero-glow-bg transition-all duration-700 ease-out pointer-events-none"
+        style={{
+          background:
+            toggleColor === 'blue'
+              ? 'radial-gradient(circle, rgba(0, 175, 255, 0.18) 0%, rgba(0, 114, 254, 0.08) 40%, transparent 70%)'
+              : 'radial-gradient(circle, rgba(244, 63, 94, 0.16) 0%, rgba(225, 29, 72, 0.07) 40%, transparent 70%)',
+        }}
+      />
+
+      {/* Concentric rings at the bottom of hero */}
+      <div className="concentric-rings hidden lg:block">
+        <div className="concentric-ring-1" />
+        <div className="concentric-ring-2" />
+        <div className="concentric-ring-3" />
+      </div>
 
       {/* Hero Section Container */}
       <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-12 text-center">
@@ -107,23 +128,51 @@ export default function HomePage() {
         {/* Floating 3D Flags Physics Layer (Senegal, Ghana, Cameroon, Nigeria, Côte d'Ivoire) */}
         <FloatingFlags mousePos={mousePos} />
 
-        {/* Program Identification Pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-slate-200/80 shadow-2xs text-xs font-semibold text-slate-800 mb-6 backdrop-blur-md">
-          <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+        {/* Floating Youth Leaders Program pill badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-slate-200/80 shadow-2xs text-xs font-semibold text-slate-800 mb-6 backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-500 relative z-20">
+          <span
+            className={`w-2 h-2 rounded-full animate-pulse transition-colors duration-300 ${
+              toggleColor === 'blue' ? 'bg-brand-500' : 'bg-rose-500'
+            }`}
+          />
           <span>KOICA Youth Leaders Program • 2026–2027</span>
         </div>
 
-        {/* Hero Title with Toggle Button */}
-        <h1 className="font-display font-black text-4xl sm:text-6xl md:text-7xl lg:text-8xl text-slate-900 tracking-tight leading-[1.08] mb-6 select-none max-w-4xl mx-auto">
-          Connect{' '}
-          <span className="inline-flex align-middle mx-1.5 sm:mx-2.5 my-1">
-            <HeroToggle
-              state={toggleState}
-              onToggle={handleToggle}
-              className="transform hover:scale-105 transition-transform"
-            />
-          </span>{' '}
-          Discover
+        {/* Hero Title with integrated automatic/interactive Toggle and Ash-to-Blue text animation */}
+        <h1 className="font-display font-black text-4xl sm:text-6xl md:text-7xl lg:text-8xl text-slate-900 tracking-tight leading-[1.08] mb-5 max-w-5xl mx-auto flex flex-col items-center relative z-20 animate-in fade-in duration-700">
+          <span className="inline-flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-4 md:gap-x-5 gap-y-2">
+            <span className="text-slate-900">Connect</span>
+            
+            <span className="inline-flex items-center align-middle my-auto">
+              <HeroToggle
+                state={toggleColor}
+                onToggle={() => setToggleColor((prev) => (prev === 'blue' ? 'red' : 'blue'))}
+                className="transform hover:scale-105 transition-transform"
+              />
+            </span>
+
+            {/* Discover text transitions from light ash to vibrant gradient blue */}
+            <span className="relative inline-block select-none">
+              <span
+                className={`transition-opacity duration-700 ease-out text-slate-400 font-black ${
+                  toggleColor === 'blue' ? 'opacity-0' : 'opacity-100'
+                }`}
+              >
+                Discover
+              </span>
+              <span
+                className={`absolute inset-0 bg-clip-text text-transparent bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600 transition-opacity duration-700 ease-out font-black ${
+                  toggleColor === 'blue' ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                Discover
+              </span>
+            </span>
+          </span>
+
+          <span className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-700 tracking-tight mt-2 sm:mt-3 block">
+            with your fellow leaders across Africa
+          </span>
         </h1>
 
         {/* Hero Supporting Text */}
