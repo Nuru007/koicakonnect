@@ -405,7 +405,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     home: {
       heroBadge: 'KOICA Youth Leaders Program • 2026–2027',
-      heroTitleConnect: 'Connect & Discover',
+      heroTitleConnect: 'Connect',
       heroTitleWith: 'with your fellow leaders across Africa',
       heroSubtitle: 'Discover researchers, technical specialists, entrepreneurs, and leaders across Africa and global partner hubs.',
       discoverBtn: 'Discover People',
@@ -748,7 +748,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     home: {
       heroBadge: 'Programme des Jeunes Leaders KOICA • 2026–2027',
-      heroTitleConnect: 'Connecter & Découvrir',
+      heroTitleConnect: 'Connecter',
       heroTitleWith: 'avec vos pairs et leaders à travers l’Afrique',
       heroSubtitle: 'Découvrez des chercheurs, spécialistes techniques, entrepreneurs et leaders à travers l’Afrique et les pôles partenaires mondiaux.',
       discoverBtn: 'Découvrir des personnes',
@@ -1091,7 +1091,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     home: {
       heroBadge: 'KOICA 청년 리더 프로그램 • 2026–2027',
-      heroTitleConnect: '연결하고 발견하세요',
+      heroTitleConnect: '연결',
       heroTitleWith: '아프리카 전역의 동료 리더들과 함께',
       heroSubtitle: '아프리카 전역과 글로벌 협력 거점의 연구원, 기술 전문가, 창업가 및 리더들을 전문 분야별로 발견하세요.',
       discoverBtn: '인재 탐색하기',
