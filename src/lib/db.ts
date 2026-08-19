@@ -11,7 +11,7 @@ import {
   SearchResult 
 } from './types';
 import { generateResetToken, hashResetToken, logDevResetLink } from './auth';
-import { COUNTRIES } from './countries';
+import { COUNTRIES, PRIMARY_AFRICAN_COUNTRIES, normalizeCountry } from './countries';
 
 function slugify(text: string): string {
   return text
@@ -446,7 +446,7 @@ class DatabaseManager {
       username,
       role: userData.role || '',
       organisation: userData.organisation || '',
-      country: userData.country || '',
+      country: userData.country ? normalizeCountry(userData.country) : '',
       city: userData.city || '',
       bio: userData.bio || '',
       profile_image: profileImageUrl,
@@ -510,7 +510,7 @@ class DatabaseManager {
     if (data.name !== undefined) updates.name = data.name.trim();
     if (data.role !== undefined) updates.role = data.role.trim();
     if (data.organisation !== undefined) updates.organisation = data.organisation.trim();
-    if (data.country !== undefined) updates.country = data.country.trim();
+    if (data.country !== undefined) updates.country = normalizeCountry(data.country);
     if (data.city !== undefined) updates.city = data.city.trim();
     if (data.bio !== undefined) updates.bio = data.bio.trim();
     
@@ -823,9 +823,14 @@ class DatabaseManager {
     }
 
     if (filters.countries && filters.countries.length > 0) {
-      users = users.filter(u =>
-        filters.countries!.some(c => u.country.toLowerCase() === c.toLowerCase().trim())
-      );
+      const normalizedFilterCountries = filters.countries.map(c => normalizeCountry(c).toLowerCase());
+      users = users.filter(u => {
+        const uCountryNorm = normalizeCountry(u.country).toLowerCase();
+        return (
+          normalizedFilterCountries.includes(uCountryNorm) ||
+          filters.countries!.some(c => u.country.toLowerCase().trim() === c.toLowerCase().trim())
+        );
+      });
     }
 
     const fullProfiles = await Promise.all(users.map(u => this.assembleUserProfile(u)));
@@ -945,14 +950,13 @@ class DatabaseManager {
       if (u.name?.trim() && u.role?.trim()) {
         const rawCountry = u.country?.trim();
         if (rawCountry) {
-          const lower = rawCountry.toLowerCase();
-          const matched = COUNTRIES.find((c) => c.name.toLowerCase() === lower);
-          const canonicalName = matched ? matched.name : (rawCountry.charAt(0).toUpperCase() + rawCountry.slice(1));
+          const canonicalName = normalizeCountry(rawCountry);
+          const key = canonicalName.toLowerCase();
 
-          if (!countMap[lower]) {
-            countMap[lower] = { country: canonicalName, count: 0 };
+          if (!countMap[key]) {
+            countMap[key] = { country: canonicalName, count: 0 };
           }
-          countMap[lower].count += 1;
+          countMap[key].count += 1;
         }
       }
     }

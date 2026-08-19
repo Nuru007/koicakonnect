@@ -59,9 +59,9 @@ export default function HomePage() {
     async function fetchData() {
       try {
         const [catRes, userRes, statsRes] = await Promise.all([
-          fetch('/api/taxonomies'),
-          fetch('/api/users?limit=4'),
-          fetch('/api/stats'),
+          fetch('/api/taxonomies', { cache: 'no-store' }),
+          fetch('/api/users?limit=4', { cache: 'no-store' }),
+          fetch('/api/stats', { cache: 'no-store' }),
         ]);
 
         if (catRes.ok) {

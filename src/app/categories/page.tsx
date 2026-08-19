@@ -15,7 +15,7 @@ export default function CategoriesPage() {
   useEffect(() => {
     async function loadCategories() {
       try {
-        const res = await fetch('/api/stats');
+        const res = await fetch('/api/stats', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setCategoriesWithStats(data.categoryStats || []);

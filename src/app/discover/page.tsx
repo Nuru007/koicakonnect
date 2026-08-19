@@ -6,7 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { UserProfile, Category, Skill, Interest, Language } from '@/lib/types';
 import { ProfileCard } from '@/components/ProfileCard';
 import { EmptyState } from '@/components/EmptyState';
-import { getCountryFlag } from '@/lib/countries';
+import { getCountryFlag, getCountryFlagImg, normalizeCountry } from '@/lib/countries';
 import {
   Search,
   Filter,
@@ -76,7 +76,7 @@ function DiscoverContent() {
   useEffect(() => {
     async function loadTaxonomies() {
       try {
-        const res = await fetch('/api/taxonomies');
+        const res = await fetch('/api/taxonomies', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setCategories(data.categories || []);
@@ -422,23 +422,34 @@ function DiscoverContent() {
                 {expandedSections.country ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
               {expandedSections.country && (
-                <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+                <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
                   {availableCountries.length > 0 ? (
                     availableCountries.map((c) => {
-                      const isSelected = selectedCountries.includes(c.country);
+                      const isSelected = selectedCountries.some(
+                        (sc) => normalizeCountry(sc).toLowerCase() === normalizeCountry(c.country).toLowerCase()
+                      );
+                      const flagImg = getCountryFlagImg(c.country);
                       return (
                         <button
                           key={c.country}
                           onClick={() => toggleCountry(c.country)}
-                          className={`w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between transition-colors ${
-                            isSelected ? 'bg-brand-50 text-brand-600 font-bold' : 'text-slate-600 hover:bg-slate-50'
+                          className={`w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
+                            isSelected ? 'bg-brand-50 text-brand-600 font-bold border border-brand-200/80' : 'text-slate-600 hover:bg-slate-50 border border-transparent'
                           }`}
                         >
-                          <span className="truncate flex items-center gap-1.5">
-                            <span>{getCountryFlag(c.country)}</span>
-                            <span>{c.country}</span>
+                          <span className="truncate flex items-center gap-2 min-w-0">
+                            {flagImg ? (
+                              <img
+                                src={flagImg}
+                                alt={`${c.country} Flag`}
+                                className="w-5 h-3.5 rounded object-cover border border-slate-200 flex-shrink-0"
+                              />
+                            ) : (
+                              <span className="text-xs flex-shrink-0">{getCountryFlag(c.country)}</span>
+                            )}
+                            <span className="truncate">{c.country}</span>
                           </span>
-                          <span className="text-[10px] text-slate-400 font-mono">({c.count})</span>
+                          <span className="text-[10px] text-slate-400 font-mono flex-shrink-0">({c.count})</span>
                         </button>
                       );
                     })
@@ -594,6 +605,38 @@ function DiscoverContent() {
                       {skill.name}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Country */}
+              <div className="py-4 border-b border-slate-100">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Country</h4>
+                <div className="space-y-1 max-h-36 overflow-y-auto">
+                  {availableCountries.map((c) => {
+                    const isSelected = selectedCountries.some(
+                      (sc) => normalizeCountry(sc).toLowerCase() === normalizeCountry(c.country).toLowerCase()
+                    );
+                    const flagImg = getCountryFlagImg(c.country);
+                    return (
+                      <button
+                        key={c.country}
+                        onClick={() => toggleCountry(c.country)}
+                        className={`w-full text-left px-2 py-1 rounded text-xs flex items-center justify-between ${
+                          isSelected ? 'bg-brand-50 text-brand-600 font-bold' : 'text-slate-600'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5 truncate">
+                          {flagImg ? (
+                            <img src={flagImg} alt={c.country} className="w-4 h-3 rounded object-cover" />
+                          ) : (
+                            <span>{getCountryFlag(c.country)}</span>
+                          )}
+                          <span className="truncate">{c.country}</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">({c.count})</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -2,16 +2,26 @@ export interface CountryOption {
   name: string;
   code: string;
   flag: string;
+  flagImg?: string;
   region?: string;
 }
 
+// Primary KOICA African Partner Countries (Cohort Focus)
+export const PRIMARY_AFRICAN_COUNTRIES: CountryOption[] = [
+  { name: 'Nigeria', code: 'NG', flag: '🇳🇬', flagImg: '/flags/nigeria.jpg', region: 'West Africa' },
+  { name: 'Cameroon', code: 'CM', flag: '🇨🇲', flagImg: '/flags/cameroon.jpg', region: 'Central Africa' },
+  { name: 'Ghana', code: 'GH', flag: '🇬🇭', flagImg: '/flags/ghana.png', region: 'West Africa' },
+  { name: 'Senegal', code: 'SN', flag: '🇸🇳', flagImg: '/flags/senegal.jpg', region: 'West Africa' },
+  { name: "Côte d'Ivoire", code: 'CI', flag: '🇨🇮', flagImg: '/flags/cote-divoire.svg', region: 'West Africa' },
+];
+
 export const COUNTRIES: CountryOption[] = [
   // Primary KOICA African Partner Countries
-  { name: 'Nigeria', code: 'NG', flag: '🇳🇬', region: 'West Africa' },
-  { name: 'Senegal', code: 'SN', flag: '🇸🇳', region: 'West Africa' },
-  { name: 'Ghana', code: 'GH', flag: '🇬🇭', region: 'West Africa' },
-  { name: "Côte d'Ivoire", code: 'CI', flag: '🇨🇮', region: 'West Africa' },
-  { name: 'Cameroon', code: 'CM', flag: '🇨🇲', region: 'Central Africa' },
+  { name: 'Nigeria', code: 'NG', flag: '🇳🇬', flagImg: '/flags/nigeria.jpg', region: 'West Africa' },
+  { name: 'Cameroon', code: 'CM', flag: '🇨🇲', flagImg: '/flags/cameroon.jpg', region: 'Central Africa' },
+  { name: 'Ghana', code: 'GH', flag: '🇬🇭', flagImg: '/flags/ghana.png', region: 'West Africa' },
+  { name: 'Senegal', code: 'SN', flag: '🇸🇳', flagImg: '/flags/senegal.jpg', region: 'West Africa' },
+  { name: "Côte d'Ivoire", code: 'CI', flag: '🇨🇮', flagImg: '/flags/cote-divoire.svg', region: 'West Africa' },
   { name: 'Kenya', code: 'KE', flag: '🇰🇪', region: 'East Africa' },
   { name: 'Rwanda', code: 'RW', flag: '🇷🇼', region: 'East Africa' },
   { name: 'Ethiopia', code: 'ET', flag: '🇪🇹', region: 'East Africa' },
@@ -70,10 +80,98 @@ export const COUNTRIES: CountryOption[] = [
   { name: 'Other', code: 'OTHER', flag: '🌐', region: 'Global' },
 ];
 
+/**
+ * Normalizes any country name or code representation into the canonical country name.
+ * Handles accents, case sensitivity, aliases (e.g. Cote d'Ivoire, Cameroun, Korea, etc.).
+ */
+export function normalizeCountry(input: string): string {
+  if (!input) return '';
+  const clean = input.trim();
+  if (!clean) return '';
+
+  const cleanLower = clean.toLowerCase();
+
+  // Normalize apostrophes and remove diacritics/accents for robust matching
+  const simplified = cleanLower
+    .replace(/[\u2018\u2019`]/g, "'")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  // Alias lookup map
+  const aliases: Record<string, string> = {
+    'cameroun': 'Cameroon',
+    'cameroon': 'Cameroon',
+    'cm': 'Cameroon',
+    'nigeria': 'Nigeria',
+    'ng': 'Nigeria',
+    'ghana': 'Ghana',
+    'gh': 'Ghana',
+    'senegal': 'Senegal',
+    'sn': 'Senegal',
+    'cote d\'ivoire': "Côte d'Ivoire",
+    'cote divoire': "Côte d'Ivoire",
+    'cote d ivoire': "Côte d'Ivoire",
+    'ivory coast': "Côte d'Ivoire",
+    'ci': "Côte d'Ivoire",
+    'korea': 'South Korea',
+    'south korea': 'South Korea',
+    'republic of korea': 'South Korea',
+    'kr': 'South Korea',
+    'usa': 'United States',
+    'us': 'United States',
+    'united states': 'United States',
+    'united states of america': 'United States',
+    'uk': 'United Kingdom',
+    'gb': 'United Kingdom',
+    'great britain': 'United Kingdom',
+    'united kingdom': 'United Kingdom',
+    'drc': 'Democratic Republic of the Congo',
+    'dr congo': 'Democratic Republic of the Congo',
+  };
+
+  if (aliases[simplified]) {
+    return aliases[simplified];
+  }
+
+  // Exact / partial match against COUNTRIES
+  const match = COUNTRIES.find((c) => {
+    const cNorm = c.name
+      .toLowerCase()
+      .replace(/[\u2018\u2019`]/g, "'")
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    return cNorm === simplified || c.code.toLowerCase() === cleanLower;
+  });
+
+  if (match) return match.name;
+
+  // Fallback to title casing if unknown custom string
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
+}
+
+export const getCountryOption = (countryName: string): CountryOption | undefined => {
+  if (!countryName) return undefined;
+  const canonical = normalizeCountry(countryName);
+  return COUNTRIES.find(
+    (c) => c.name.toLowerCase() === canonical.toLowerCase() || c.code.toLowerCase() === countryName.trim().toLowerCase()
+  );
+};
+
 export const getCountryFlag = (countryName: string): string => {
   if (!countryName) return '📍';
-  const match = COUNTRIES.find(
-    (c) => c.name.toLowerCase() === countryName.trim().toLowerCase()
-  );
+  const match = getCountryOption(countryName);
   return match ? match.flag : '📍';
 };
+
+export const getCountryFlagImg = (countryName: string): string | undefined => {
+  if (!countryName) return undefined;
+  const match = getCountryOption(countryName);
+  return match?.flagImg;
+};
+
+export const getCountryCode = (countryName: string): string => {
+  if (!countryName) return 'GL';
+  const match = getCountryOption(countryName);
+  return match ? match.code : countryName.slice(0, 2).toUpperCase();
+};
+
