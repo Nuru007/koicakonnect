@@ -8,7 +8,7 @@ const JWT_SECRET = new TextEncoder().encode(
 const COOKIE_NAME = 'koicakonnect_session';
 const LEGACY_COOKIE_NAME = 'networth_session';
 
-const PROTECTED_PREFIXES = [
+const PROTECTED_ROUTES = [
   '/dashboard',
   '/profile/edit',
   '/settings',
@@ -32,7 +32,9 @@ async function verifyToken(token: string): Promise<boolean> {
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
-  const isProtected = PROTECTED_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  const isProtected = PROTECTED_ROUTES.some(
+    prefix => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
   const isAuthPage = AUTH_ONLY_PAGES.some(page => pathname === page);
 
   if (!isProtected && !isAuthPage) {
@@ -45,7 +47,7 @@ export async function middleware(req: NextRequest) {
 
   const isValidSession = token ? await verifyToken(token) : false;
 
-  // 1. Protected route access by unauthenticated visitor -> redirect to /signin
+  // 1. Protected route access by unauthenticated visitor -> redirect immediately to /signin
   if (isProtected && !isValidSession) {
     const redirectUrl = new URL('/signin', req.url);
     redirectUrl.searchParams.set('redirect', `${pathname}${search}`);
@@ -64,9 +66,13 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    '/dashboard',
     '/dashboard/:path*',
     '/profile/edit',
+    '/profile/edit/:path*',
+    '/settings',
     '/settings/:path*',
+    '/admin',
     '/admin/:path*',
     '/signin',
     '/signup',

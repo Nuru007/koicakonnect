@@ -357,14 +357,15 @@ export default function ProfileEditPage() {
 
   React.useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/signin?redirect=/profile/edit');
+      window.location.href = '/signin?redirect=/profile/edit';
     }
-  }, [authLoading, user, router]);
+  }, [authLoading, user]);
 
   if (authLoading || !user) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] py-16 flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#F8FAFC] py-20 flex flex-col items-center justify-center text-center px-4">
+        <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-xs font-semibold text-slate-500">Checking your authentication session...</p>
       </div>
     );
   }

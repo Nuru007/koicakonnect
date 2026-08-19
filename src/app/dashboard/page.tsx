@@ -32,14 +32,15 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     if (!loading && !user) {
-      router.push('/signin?redirect=/dashboard');
+      window.location.href = '/signin?redirect=/dashboard';
     }
-  }, [loading, user, router]);
+  }, [loading, user]);
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] py-16 flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#F8FAFC] py-20 flex flex-col items-center justify-center text-center px-4">
+        <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-xs font-semibold text-slate-500">Checking your authentication session...</p>
       </div>
     );
   }

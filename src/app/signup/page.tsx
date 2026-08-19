@@ -62,8 +62,8 @@ export default function SignUpPage() {
     if (res.success) {
       setSuccessMsg('Your account has been created. Directing you to the Profile Builder...');
       setTimeout(() => {
-        router.push('/profile/edit');
-      }, 1200);
+        window.location.href = '/profile/edit';
+      }, 800);
     } else {
       setLoading(false);
       setError(res.error || 'Unable to create account. Please try again.');
