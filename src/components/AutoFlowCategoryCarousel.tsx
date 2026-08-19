@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles, Pause, Play } from 'lucide-react';
+import { ArrowRight, Sparkles, Activity } from 'lucide-react';
 
 export interface CategoryItem {
   num: string;
@@ -56,20 +56,17 @@ const EXTENDED_CATEGORIES = [...CATEGORIES, ...CATEGORIES, ...CATEGORIES];
 export const AutoFlowCategoryCarousel: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(CATEGORIES.length); // Start in middle set
   const [isTransitioning, setIsTransitioning] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
   const total = CATEGORIES.length;
 
-  // Faster Auto-scroll timer: advances smoothly by 1 card every 1.8 seconds
+  // Continuous uninterrupted Auto-scroll timer: advances smoothly by 1 card every 1.8 seconds
   useEffect(() => {
-    if (isPaused) return;
-
     const timer = setInterval(() => {
       setIsTransitioning(true);
       setCurrentIndex((prev) => prev + 1);
     }, 1800);
 
     return () => clearInterval(timer);
-  }, [isPaused, currentIndex]);
+  }, []);
 
   // Seamless wrap-around when reaching boundaries of the tripled array
   const handleTransitionEnd = () => {
@@ -87,10 +84,6 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
   return (
     <section
       className="relative z-10 w-full bg-gradient-to-br from-[#1258E2] via-[#0C46BF] to-[#072F8B] py-20 text-white shadow-2xl overflow-hidden border-y border-blue-400/30"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
     >
       {/* Glowing Cobalt / Cyan Ambient Highlights */}
       <div className="absolute top-0 right-0 w-[550px] h-[550px] bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
@@ -185,7 +178,7 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
           </div>
         </div>
 
-        {/* Carousel Footer: Clean Progress Indicator & Status */}
+        {/* Carousel Footer: Continuous Auto-Flow Indicator */}
         <div className="relative z-10 mt-8 pt-5 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-4">
           
           {/* Progress Indicator Dots */}
@@ -213,16 +206,12 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
             </span>
           </div>
 
-          {/* Clean Status Indicator */}
+          {/* Continuous Live Motion Badge */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsPaused(!isPaused)}
-              className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sky-100 text-xs font-bold flex items-center gap-1.5 border border-white/15 transition-all"
-              title={isPaused ? 'Resume auto-scroll' : 'Pause auto-scroll'}
-            >
-              {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-              <span>{isPaused ? 'Paused' : 'Continuous Scroll'}</span>
-            </button>
+            <div className="px-3.5 py-1.5 rounded-xl bg-white/10 text-sky-100 text-xs font-semibold flex items-center gap-2 border border-white/15 backdrop-blur-md shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-sky-300 animate-pulse" />
+              <span>Live Continuous Flow</span>
+            </div>
           </div>
         </div>
 
@@ -230,3 +219,4 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
     </section>
   );
 };
+
