@@ -29,7 +29,7 @@ function SignInContent() {
     if (res.success) {
       const redirectParam = searchParams.get('redirect');
       const destination = redirectParam && redirectParam.startsWith('/') ? redirectParam : res.redirectUrl || '/dashboard';
-      router.push(destination);
+      window.location.href = destination;
     } else {
       setLoading(false);
       setError(res.error || 'Unable to sign in. Please check your credentials.');

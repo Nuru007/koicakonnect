@@ -355,7 +355,13 @@ export default function ProfileEditPage() {
     { id: 8, title: 'Preview & Publish', icon: Eye },
   ];
 
-  if (authLoading) {
+  React.useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/signin?redirect=/profile/edit');
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] py-16 flex items-center justify-center">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
@@ -363,13 +369,8 @@ export default function ProfileEditPage() {
     );
   }
 
-  if (!user) {
-    router.push('/signin');
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-[#FAFBFF] py-10 sm:py-16">
+    <div className="min-h-screen bg-[#F8FAFC] py-10 sm:py-16">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Top Header */}

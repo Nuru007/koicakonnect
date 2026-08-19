@@ -30,17 +30,18 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  if (loading) {
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/signin?redirect=/dashboard');
+    }
+  }, [loading, user, router]);
+
+  if (loading || !user) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] py-16 flex items-center justify-center">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
-  }
-
-  if (!user) {
-    router.push('/signin');
-    return null;
   }
 
   // Calculate profile completeness

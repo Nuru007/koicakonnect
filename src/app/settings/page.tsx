@@ -35,17 +35,18 @@ export default function SettingsPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  if (loading) {
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/signin?redirect=/settings');
+    }
+  }, [loading, user, router]);
+
+  if (loading || !user) {
     return (
-      <div className="min-h-screen bg-[#FAFBFF] py-16 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] py-16 flex items-center justify-center">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
-  }
-
-  if (!user) {
-    router.push('/signin');
-    return null;
   }
 
   const handleUpdatePreferences = async (e: React.FormEvent) => {

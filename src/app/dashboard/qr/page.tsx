@@ -20,17 +20,18 @@ export default function QRPage() {
   const { t } = useLanguage();
   const router = useRouter();
 
-  if (loading) {
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/signin?redirect=/dashboard/qr');
+    }
+  }, [loading, user, router]);
+
+  if (loading || !user) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] py-16 flex items-center justify-center">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
-  }
-
-  if (!user) {
-    router.push('/signin');
-    return null;
   }
 
   const useCases = [
