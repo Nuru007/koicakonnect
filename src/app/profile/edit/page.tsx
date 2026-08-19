@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { Category, Skill, Interest, Language, ProfessionalLink } from '@/lib/types';
+import { Category, Skill, Interest, Language, ProfessionalLink, UserProfile } from '@/lib/types';
 import { ProfileCard } from '@/components/ProfileCard';
 import { QRCard } from '@/components/QRCard';
 import {
@@ -29,6 +29,7 @@ import {
   AlertCircle,
   ChevronDown,
   Lightbulb,
+  Clock,
 } from 'lucide-react';
 import { COUNTRIES } from '@/lib/countries';
 
@@ -39,8 +40,10 @@ export default function ProfileEditPage() {
 
   const [activeStep, setActiveStep] = useState(1);
   const [saving, setSaving] = useState(false);
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Guard to ensure initial state from DB is only populated once per user session
   const loadedUserIdRef = useRef<string | null>(null);
@@ -58,16 +61,16 @@ export default function ProfileEditPage() {
   const [bio, setBio] = useState('');
   const [preferredLanguage, setPreferredLanguage] = useState('en');
 
-  // Step 3: Categories
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-
-  // Step 4: Skills
+  // Step 3: Skills
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [customSkillInput, setCustomSkillInput] = useState('');
 
-  // Step 5: Interests
+  // Step 4: Interests
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [customInterestInput, setCustomInterestInput] = useState('');
+
+  // Step 5: Categories / Focus Disciplines
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
 
   // Step 6: Languages
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
@@ -88,15 +91,35 @@ export default function ProfileEditPage() {
   const [availableInterests, setAvailableInterests] = useState<Interest[]>([]);
   const [availableLanguages, setAvailableLanguages] = useState<Language[]>([]);
 
-  // Sample avatars
-  const sampleAvatars = [
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80',
-  ];
+  // Calculate most appropriate incomplete step to resume from
+  const determineInitialStep = (u: UserProfile): number => {
+    if (u.status === 'published') return 1;
 
-  // Populate data when user initially loads (only once per user ID to prevent wiping active edits)
+    const hasBasic = Boolean(u.name && u.role && u.country);
+    if (!hasBasic) return 1;
+
+    const hasBio = Boolean(u.bio && u.bio.trim().length >= 10);
+    if (!hasBio) return 2;
+
+    const hasSkills = Boolean(u.skills && u.skills.length >= 1);
+    if (!hasSkills) return 3;
+
+    const hasInterests = Boolean(u.interests && u.interests.length >= 1);
+    if (!hasInterests) return 4;
+
+    const hasCategories = Boolean(u.categories && u.categories.length >= 1);
+    if (!hasCategories) return 5;
+
+    const hasLanguages = Boolean(u.languages && u.languages.length >= 1);
+    if (!hasLanguages) return 6;
+
+    const hasLinks = Boolean(u.links && u.links.length >= 1);
+    if (!hasLinks) return 7;
+
+    return 8;
+  };
+
+  // Populate data when user initially loads (Hydration Guard)
   useEffect(() => {
     if (user && loadedUserIdRef.current !== user.id) {
       loadedUserIdRef.current = user.id;
@@ -136,6 +159,13 @@ export default function ProfileEditPage() {
         if (gh) setGithubUrl(gh.url);
         if (pf) setPortfolioUrl(pf.url);
         if (oth) setOtherUrl(oth.url);
+      }
+
+      const initialStep = determineInitialStep(user);
+      setActiveStep(initialStep);
+      setIsHydrated(true);
+      if (user.updatedAt) {
+        setLastSavedTime(new Date(user.updatedAt));
       }
     }
   }, [user]);
@@ -208,26 +238,31 @@ export default function ProfileEditPage() {
   };
 
   const handleSave = async (newStatus?: 'draft' | 'published' | 'private'): Promise<boolean> => {
-    setError(null);
-    setSavedSuccess(false);
+    if (!isHydrated) return false;
 
-    const targetStatus = newStatus || status;
+    setError(null);
+    setSaveStatus('saving');
+    setSaving(true);
+
+    const targetStatus = newStatus || status || 'draft';
 
     // Client-side validation before publishing
     if (targetStatus === 'published') {
       if (!name || !name.trim()) {
         setError('Please provide your Full Name in Step 1 before publishing.');
         setActiveStep(1);
+        setSaveStatus('error');
+        setSaving(false);
         return false;
       }
       if (!role || !role.trim()) {
         setError('Please provide your Current Role / Profession in Step 1 before publishing.');
         setActiveStep(1);
+        setSaveStatus('error');
+        setSaving(false);
         return false;
       }
     }
-
-    setSaving(true);
 
     try {
       const linksPayload: ProfessionalLink[] = [];
@@ -265,17 +300,25 @@ export default function ProfileEditPage() {
 
       if (res.ok && data.success && updatedProfile) {
         setStatus(updatedProfile.status || targetStatus);
-        setSavedSuccess(true);
+        if (updatedProfile.profileImage) {
+          setProfileImage(updatedProfile.profileImage);
+        }
+        setSaveStatus('saved');
+        setLastSavedTime(new Date());
         await refreshUser();
-        setTimeout(() => setSavedSuccess(false), 4000);
+        setTimeout(() => {
+          setSaveStatus((prev) => (prev === 'saved' ? 'idle' : prev));
+        }, 3500);
         return true;
       } else {
         const errorMsg = data.error?.message || data.error || 'Failed to save changes. Please try again.';
         setError(errorMsg);
+        setSaveStatus('error');
         return false;
       }
     } catch (err: any) {
       setError(err.message || 'Network error. Your changes have not been lost, please try again.');
+      setSaveStatus('error');
       return false;
     } finally {
       setSaving(false);
@@ -317,7 +360,7 @@ export default function ProfileEditPage() {
   };
 
   // Construct preview profile object
-  const previewProfile = {
+  const previewProfile = useMemo(() => ({
     id: user?.id || 'preview_id',
     name: name || 'Your Name',
     email: user?.email || '',
@@ -330,7 +373,8 @@ export default function ProfileEditPage() {
     profileImage: profileImage || '',
     preferredLanguage: preferredLanguage || 'en',
     status: status,
-    createdAt: new Date().toISOString(),
+    isDiscoverable: status === 'published',
+    createdAt: user?.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     categories: availableCategories.filter(c => selectedCategoryIds.includes(c.id)),
     skills: selectedSkills.map((s, i) => ({ id: `s_${i}`, name: s, slug: s.toLowerCase() })),
@@ -341,8 +385,14 @@ export default function ProfileEditPage() {
       websiteUrl ? { platform: 'website' as const, url: websiteUrl } : null,
       githubUrl ? { platform: 'github' as const, url: githubUrl } : null,
       portfolioUrl ? { platform: 'portfolio' as const, url: portfolioUrl } : null,
+      otherUrl ? { platform: 'other' as const, url: otherUrl } : null,
     ].filter(Boolean) as ProfessionalLink[],
-  };
+  }), [
+    user, name, username, role, organisation, country, city, bio, profileImage,
+    preferredLanguage, status, availableCategories, selectedCategoryIds, selectedSkills,
+    selectedInterests, availableLanguages, selectedLanguages, linkedinUrl, websiteUrl,
+    githubUrl, portfolioUrl, otherUrl,
+  ]);
 
   const steps = [
     { id: 1, title: 'Basic Info', icon: User },
@@ -355,9 +405,7 @@ export default function ProfileEditPage() {
     { id: 8, title: 'Preview & Publish', icon: Eye },
   ];
 
-
-
-  if (authLoading) {
+  if (authLoading || (!isHydrated && user)) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] py-20 flex flex-col items-center justify-center text-center px-4">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
@@ -400,23 +448,43 @@ export default function ProfileEditPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleSave()}
-              disabled={saving}
-              className="btn-secondary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
-            >
-              {savedSuccess ? (
+          <div className="flex items-center gap-3">
+            {/* Draft Status Indicator */}
+            <div className="text-xs font-medium text-slate-500 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-xs">
+              {saveStatus === 'saving' ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-emerald-600">Saved!</span>
+                  <div className="w-3 h-3 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : saveStatus === 'saved' ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 font-semibold">Draft saved ✓</span>
+                </>
+              ) : saveStatus === 'error' ? (
+                <>
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+                  <span className="text-rose-600 font-semibold">Couldn't save. Try again.</span>
+                </>
+              ) : lastSavedTime ? (
+                <>
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Saved {lastSavedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </>
               ) : (
-                <>
-                  <Save className="w-3.5 h-3.5" />
-                  <span>{saving ? 'Saving...' : 'Save Draft'}</span>
-                </>
+                <span>Draft (Private)</span>
               )}
+            </div>
+
+            {/* Explicit Save Draft Button */}
+            <button
+              type="button"
+              onClick={() => handleSave('draft')}
+              disabled={saving || !isHydrated}
+              className="btn-secondary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{saving ? 'Saving...' : 'Save Draft'}</span>
             </button>
 
             {status === 'published' ? (
@@ -442,183 +510,157 @@ export default function ProfileEditPage() {
             <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
             <div>
               <p className="font-bold text-xs">
-                {status === 'published' ? 'Your profile is live' : 'Your profile is private'}
+                {status === 'published' ? 'Your profile is live' : 'Your profile is private (Draft Mode)'}
               </p>
               <p className="text-[11px] opacity-80 mt-0.5">
                 {status === 'published'
-                  ? 'People can now discover your profile on Koica Connect.'
-                  : 'Complete your profile and publish it to appear on Discover.'}
+                  ? 'People can discover your profile on Koica Connect search and category filters.'
+                  : 'Your progress is automatically saved to your private account. Complete your profile and hit Publish in Step 8 to appear on Discover.'}
               </p>
             </div>
           </div>
-          {status !== 'published' ? (
-            <button
-              onClick={() => setActiveStep(8)}
-              className="btn-primary py-1.5 px-3 rounded-xl text-xs font-bold whitespace-nowrap"
-            >
-              Publish Now
-            </button>
-          ) : (
-            <Link
-              href={`/profile/${username || user?.username}`}
-              className="btn-secondary py-1.5 px-3 rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-1"
-            >
-              <span>View Live Profile</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          )}
+
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/70 border border-current">
+            Step {activeStep} of 8
+          </span>
         </div>
 
-        {savedSuccess && (
-          <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span>
-              {status === 'published'
-                ? 'Profile published successfully! Your profile is now live on Discover.'
-                : 'Profile draft saved successfully.'}
-            </span>
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Step Progress Pills Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
-          {steps.map((s) => {
-            const Icon = s.icon;
-            const isCurrent = activeStep === s.id;
-            const isCompleted = activeStep > s.id;
-
-            return (
-              <button
-                key={s.id}
-                onClick={() => setActiveStep(s.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  isCurrent
-                    ? 'bg-brand-500 text-white shadow-brand-sm'
-                    : isCompleted
-                    ? 'bg-brand-50 text-brand-700 hover:bg-brand-100'
-                    : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{s.id}. {s.title}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Step Form Container */}
-        <div className="glass-card rounded-3xl p-6 sm:p-10 border border-slate-200/80 bg-white shadow-sm mb-8">
+        {/* Wizard Card */}
+        <div className="surface-card rounded-3xl p-6 sm:p-10 border border-slate-200 bg-white shadow-xs relative">
           
+          {/* Stepper Navigation */}
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-10 pb-6 border-b border-slate-100">
+            {steps.map((step) => {
+              const Icon = step.icon;
+              const isCurrent = activeStep === step.id;
+              const isPast = activeStep > step.id;
+
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={async () => {
+                    if (isHydrated) {
+                      await handleSave('draft');
+                    }
+                    setActiveStep(step.id);
+                  }}
+                  className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all text-center ${
+                    isCurrent
+                      ? 'bg-brand-50 text-brand-600 font-bold ring-1 ring-brand-500/20'
+                      : isPast
+                      ? 'text-slate-600 hover:bg-slate-50'
+                      : 'text-slate-400 hover:bg-slate-50'
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
+                      isCurrent
+                        ? 'bg-brand-500 text-white shadow-brand-sm'
+                        : isPast
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {isPast ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                  </div>
+                  <span className="text-[10px] truncate max-w-full font-semibold">
+                    {step.title}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Error Banner */}
+          {error && (
+            <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between gap-3 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="text-rose-500 hover:text-rose-700 p-1"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* STEP 1: Basic Information */}
           {activeStep === 1 && (
             <div className="space-y-6">
               <div>
                 <h3 className="font-display font-bold text-xl text-slate-900">Step 1 — Basic Information</h3>
-                <p className="text-xs text-slate-500">Your core professional identifiers</p>
+                <p className="text-xs text-slate-500">Your core identity details on Koica Connect</p>
               </div>
 
-              {/* Headshot PNG / JPG File Upload */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                  Headshot Photo (PNG, JPG)
+              {/* Headshot Upload */}
+              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Headshot Photo
                 </label>
-
                 <div className="flex flex-col sm:flex-row items-center gap-6">
-                  {/* Avatar Preview */}
-                  {profileImage ? (
-                    <div className="relative group">
+                  <div className="relative group flex-shrink-0">
+                    {profileImage ? (
                       <img
                         src={profileImage}
-                        alt="Headshot"
-                        className="w-28 h-28 rounded-3xl object-cover ring-4 ring-brand-100 shadow-md transition-all"
+                        alt="Headshot Preview"
+                        className="w-24 h-24 rounded-2xl object-cover ring-2 ring-brand-500/40 shadow-xs"
                       />
+                    ) : (
+                      <div className="w-24 h-24 rounded-2xl bg-brand-50 border-2 border-dashed border-brand-200 flex items-center justify-center text-brand-600">
+                        <Camera className="w-8 h-8" />
+                      </div>
+                    )}
+                    {profileImage && (
                       <button
                         type="button"
                         onClick={() => setProfileImage('')}
-                        title="Remove Photo"
-                        className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-md hover:bg-rose-600 transition-colors"
+                        className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full shadow-sm hover:bg-rose-600 transition-colors"
+                        title="Remove photo"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
-                    </div>
-                  ) : (
-                    <div className="w-28 h-28 rounded-3xl bg-brand-50/80 border-2 border-dashed border-brand-200 flex flex-col items-center justify-center text-brand-500 text-xs font-semibold shadow-inner">
-                      <Camera className="w-8 h-8 mb-1 opacity-75" />
-                      <span>No photo</span>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {/* Drag-and-Drop & File Picker Zone */}
-                  <div className="flex-1 w-full">
-                    <label
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                          handleImageFile(e.dataTransfer.files[0]);
-                        }
-                      }}
-                      className="cursor-pointer border-2 border-dashed border-slate-200 hover:border-brand-500 hover:bg-brand-50/30 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all bg-slate-50/60 group block"
-                    >
+                  <div className="flex-1 space-y-2 text-center sm:text-left">
+                    <label className="btn-primary py-2 px-4 rounded-xl text-xs font-bold inline-flex items-center gap-2 cursor-pointer shadow-brand-sm">
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>Upload Profile Photo</span>
                       <input
                         type="file"
-                        accept="image/png, image/jpeg, image/jpg, image/webp"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
                         className="hidden"
                         onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            handleImageFile(e.target.files[0]);
-                          }
+                          const file = e.target.files?.[0];
+                          if (file) handleImageFile(file);
                         }}
                       />
-                      <div className="w-10 h-10 rounded-2xl bg-white text-brand-500 shadow-sm flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
-                        <Camera className="w-5 h-5" />
-                      </div>
-                      <p className="text-xs font-bold text-slate-800 mb-0.5">
-                        <span className="text-brand-600">Click to upload</span> or drag & drop photo
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        Supports PNG, JPG, or JPEG (Max 10MB)
-                      </p>
                     </label>
-
-                    {profileImage && !error && (
-                      <p className="text-[11px] text-emerald-600 font-semibold mt-2 flex items-center gap-1">
-                        <Check className="w-3.5 h-3.5" /> Photo selected and ready
-                      </p>
-                    )}
-
-                    {error && error.toLowerCase().includes('image') && (
-                      <div className="mt-2.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
-                        <span>{error}</span>
-                      </div>
-                    )}
+                    <p className="text-[11px] text-slate-500">
+                      Recommended: High quality square PNG or JPG, max 10MB.
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Name & Username */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Full Name *
+                    Full Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
+                    placeholder="e.g. Dr. Ngozi Okonjo"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                   />
                 </div>
 
@@ -627,71 +669,59 @@ export default function ProfileEditPage() {
                     Username / Handle
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-mono text-slate-400">
-                      @
-                    </span>
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-slate-400">@</span>
                     <input
                       type="text"
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:border-brand-500"
+                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
+                      placeholder="ngozi-okonjo"
+                      className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-mono"
                     />
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center justify-between">
-                    <span>Account Email</span>
-                    <span className="text-[10px] text-emerald-600 font-bold">Verified</span>
-                  </label>
-                  <input
-                    type="email"
-                    disabled
-                    value={user?.email || ''}
-                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-medium text-slate-500 cursor-not-allowed"
-                    title="Account email stored in Supabase"
-                  />
-                </div>
               </div>
 
+              {/* Role & Organisation */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Current Role / Profession *
+                    Current Role / Profession <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
+                    required
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    placeholder="e.g. AI Research Scientist, Product Lead"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
+                    placeholder="e.g. Director General, Economist"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Organisation
+                    Organisation / Institution
                   </label>
                   <input
                     type="text"
                     value={organisation}
                     onChange={(e) => setOrganisation(e.target.value)}
-                    placeholder="e.g. DeepMind, Acme Robotics, Stanford"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
+                    placeholder="e.g. World Trade Organization"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                   />
                 </div>
               </div>
 
+              {/* Country & City */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Country
+                    Country <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <select
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      className="w-full pl-3.5 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:border-brand-500 appearance-none cursor-pointer"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all appearance-none cursor-pointer"
                     >
                       <option value="">Select country...</option>
                       {COUNTRIES.map((c) => (
@@ -700,135 +730,177 @@ export default function ProfileEditPage() {
                         </option>
                       ))}
                     </select>
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    </div>
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    City / Location
+                    City
                   </label>
                   <input
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="e.g. London, San Francisco, Paris, Seoul"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
+                    placeholder="e.g. Abuja, Geneva"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* STEP 2: About / Bio */}
+          {/* STEP 2: About & Bio */}
           {activeStep === 2 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 2 — Professional Bio</h3>
-                <p className="text-xs text-slate-500">Provide a concise summary of your work, background, and what you build</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">Step 2 — About & Bio</h3>
+                <p className="text-xs text-slate-500">Provide a professional summary of your background, experience, and vision</p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                  About You
+                  Professional Bio
                 </label>
                 <textarea
-                  rows={6}
+                  rows={5}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Share your focus area, what problems you solve, recent projects, or technical expertise..."
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all leading-relaxed"
+                  placeholder="Share your career journey, key accomplishments, KOICA fellowship experience, and areas you are passionate about collaborating in..."
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all leading-relaxed"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">Recommended: 2 to 4 sentences.</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Tip: A compelling bio helps international partners and alumni connect with you for opportunities.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                  Preferred Language of Communication
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { code: 'en', label: 'English (EN)' },
+                    { code: 'fr', label: 'Français (FR)' },
+                    { code: 'ko', label: '한국어 (KO)' },
+                  ].map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => setPreferredLanguage(lang.code)}
+                      className={`p-3 rounded-xl border text-xs font-bold transition-all ${
+                        preferredLanguage === lang.code
+                          ? 'bg-brand-50 border-brand-500 text-brand-700 ring-2 ring-brand-500/20'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          {/* STEP 3: Skills */}
+          {/* STEP 3: Skills & Expertise */}
           {activeStep === 3 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 3 — Functional Skills</h3>
-                <p className="text-xs text-slate-500">What you can actually do and deliver (tools, engineering, disciplines)</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">Step 3 — Skills & Areas of Expertise</h3>
+                <p className="text-xs text-slate-500">Highlight your core capabilities and technical skills</p>
               </div>
 
-              {/* Add custom skill input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={customSkillInput}
-                  onChange={(e) => setCustomSkillInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomSkill(); } }}
-                  placeholder="Type a skill and press Add (e.g. Python, PCB Design, Robotics)..."
-                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomSkill}
-                  className="btn-primary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add</span>
-                </button>
-              </div>
-
-              {/* Selected skills list */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+              {/* Selected Skills Chips */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 min-h-[80px]">
+                <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
                   Your Selected Skills ({selectedSkills.length})
                 </label>
-                <div className="flex flex-wrap gap-2 min-h-[48px] p-3 bg-slate-50 rounded-2xl border border-slate-200">
-                  {selectedSkills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="badge-pill bg-brand-500 text-white shadow-sm text-xs py-1 px-3 flex items-center gap-1.5"
-                    >
-                      <span>{skill}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeSkill(skill)}
-                        className="hover:text-rose-200"
+                {selectedSkills.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedSkills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200 animate-in zoom-in-95 duration-150"
                       >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </span>
-                  ))}
-                  {selectedSkills.length === 0 && (
-                    <span className="text-xs text-slate-400 italic">No skills selected yet. Choose from below or add custom skills.</span>
-                  )}
+                        <span>{skill}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeSkill(skill)}
+                          className="text-brand-400 hover:text-brand-700"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">
+                    No skills added yet. Select from below or type a custom skill.
+                  </p>
+                )}
+              </div>
+
+              {/* Custom Skill Input */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                  Add Custom Skill
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customSkillInput}
+                    onChange={(e) => setCustomSkillInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCustomSkill();
+                      }
+                    }}
+                    placeholder="e.g. Sustainable Agriculture, Public Policy, Cloud Architecture"
+                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={addCustomSkill}
+                    disabled={!customSkillInput.trim()}
+                    className="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Suggestions from DB Taxonomies */}
-              <div>
-                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">
-                  Popular Suggestions from Platform
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {availableSkills.map((s) => {
-                    const isSelected = selectedSkills.includes(s.name);
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => {
-                          if (isSelected) removeSkill(s.name);
-                          else setSelectedSkills(prev => [...prev, s.name]);
-                        }}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                          isSelected
-                            ? 'bg-brand-500 text-white shadow-sm font-bold'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                        }`}
-                      >
-                        {isSelected ? `✓ ${s.name}` : `+ ${s.name}`}
-                      </button>
-                    );
-                  })}
+              {/* Recommended Taxonomy Skills */}
+              {availableSkills.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                    Suggested Skills
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableSkills.map((s) => {
+                      const isSelected = selectedSkills.includes(s.name);
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) removeSkill(s.name);
+                            else setSelectedSkills(prev => [...prev, s.name]);
+                          }}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                            isSelected
+                              ? 'bg-brand-500 text-white shadow-brand-sm'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+                          }`}
+                        >
+                          {isSelected ? `✓ ${s.name}` : `+ ${s.name}`}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -837,96 +909,112 @@ export default function ProfileEditPage() {
             <div className="space-y-6">
               <div>
                 <h3 className="font-display font-bold text-xl text-slate-900">Step 4 — Areas of Interest</h3>
-                <p className="text-xs text-slate-500">What you care about, research, or want to explore with others</p>
+                <p className="text-xs text-slate-500">Select topics and fields you are interested in collaborating on</p>
               </div>
 
-              {/* Add custom interest */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={customInterestInput}
-                  onChange={(e) => setCustomInterestInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomInterest(); } }}
-                  placeholder="Type an interest (e.g. Artificial Intelligence, Climate Tech, Quantum Computing)..."
-                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomInterest}
-                  className="btn-primary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add</span>
-                </button>
-              </div>
-
-              {/* Selected Interests */}
-              <div>
-                <label className="block text-xs font-bold text-cyan-700 mb-2 uppercase tracking-wider">
-                  Your Selected Areas of Interest ({selectedInterests.length})
+              {/* Selected Interests Chips */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 min-h-[80px]">
+                <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
+                  Your Selected Interests ({selectedInterests.length})
                 </label>
-                <div className="flex flex-wrap gap-2 min-h-[48px] p-3 bg-cyan-50/50 rounded-2xl border border-cyan-100">
-                  {selectedInterests.map((interest) => (
-                    <span
-                      key={interest}
-                      className="badge-pill bg-brand-400 text-white shadow-sm text-xs py-1 px-3 flex items-center gap-1.5"
-                    >
-                      <span>{interest}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeInterest(interest)}
-                        className="hover:text-rose-200"
+                {selectedInterests.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedInterests.map((interest) => (
+                      <span
+                        key={interest}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 animate-in zoom-in-95 duration-150"
                       >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </span>
-                  ))}
-                  {selectedInterests.length === 0 && (
-                    <span className="text-xs text-cyan-600 italic">No interests selected yet.</span>
-                  )}
+                        <span>{interest}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeInterest(interest)}
+                          className="text-sky-400 hover:text-sky-700"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">
+                    No interests added yet. Pick from below or type a custom interest.
+                  </p>
+                )}
+              </div>
+
+              {/* Custom Interest Input */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                  Add Custom Interest
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customInterestInput}
+                    onChange={(e) => setCustomInterestInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCustomInterest();
+                      }
+                    }}
+                    placeholder="e.g. AI for Healthcare, Renewable Microgrids, Climate Finance"
+                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={addCustomInterest}
+                    disabled={!customInterestInput.trim()}
+                    className="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Suggestions */}
-              <div>
-                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">
-                  Platform Interest Taxonomies
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {availableInterests.map((i) => {
-                    const isSelected = selectedInterests.includes(i.name);
-                    return (
-                      <button
-                        key={i.id}
-                        type="button"
-                        onClick={() => {
-                          if (isSelected) removeInterest(i.name);
-                          else setSelectedInterests(prev => [...prev, i.name]);
-                        }}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                          isSelected
-                            ? 'bg-brand-400 text-white shadow-sm font-bold'
-                            : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-800'
-                        }`}
-                      >
-                        {isSelected ? `✓ ${i.name}` : `+ ${i.name}`}
-                      </button>
-                    );
-                  })}
+              {/* Suggested Interests */}
+              {availableInterests.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                    Suggested Interests
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableInterests.map((int) => {
+                      const isSelected = selectedInterests.includes(int.name);
+                      return (
+                        <button
+                          key={int.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) removeInterest(int.name);
+                            else setSelectedInterests(prev => [...prev, int.name]);
+                          }}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                            isSelected
+                              ? 'bg-sky-600 text-white shadow-xs'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+                          }`}
+                        >
+                          {isSelected ? `✓ ${int.name}` : `+ ${int.name}`}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* STEP 5: Categories */}
+          {/* STEP 5: Categories / Focus Disciplines */}
           {activeStep === 5 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 5 — Industry Categories</h3>
-                <p className="text-xs text-slate-500">Select one or more industries you belong to (stored in relational database)</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">Step 5 — Focus Disciplines</h3>
+                <p className="text-xs text-slate-500">Choose the KOICA focus disciplines and industry categories that represent your work</p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {availableCategories.map((cat) => {
                   const isSelected = selectedCategoryIds.includes(cat.id);
                   return (
@@ -934,14 +1022,23 @@ export default function ProfileEditPage() {
                       key={cat.id}
                       type="button"
                       onClick={() => toggleCategory(cat.id)}
-                      className={`p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all ${
+                      className={`p-4 rounded-2xl border text-left flex items-start justify-between gap-3 transition-all ${
                         isSelected
-                          ? 'bg-brand-50 border-brand-500 ring-2 ring-brand-500/20 text-brand-700 font-bold'
-                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                          ? 'bg-brand-50 border-brand-500 ring-2 ring-brand-500/20 text-brand-900'
+                          : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
-                      <span className="text-xs truncate">{cat.name}</span>
-                      {isSelected && <Check className="w-4 h-4 text-brand-500 flex-shrink-0" />}
+                      <div>
+                        <p className="font-display font-bold text-sm">{cat.name}</p>
+                        {cat.description && (
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{cat.description}</p>
+                        )}
+                      </div>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                        isSelected ? 'bg-brand-500 text-white' : 'border border-slate-300'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                      </div>
                     </button>
                   );
                 })}
@@ -953,11 +1050,11 @@ export default function ProfileEditPage() {
           {activeStep === 6 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 6 — Languages</h3>
-                <p className="text-xs text-slate-500">Select languages you speak or write in</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">Step 6 — Spoken Languages</h3>
+                <p className="text-xs text-slate-500">Indicate the languages you speak to connect across international chapters</p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {availableLanguages.map((lang) => {
                   const isSelected = selectedLanguages.includes(lang.code);
                   return (
@@ -965,16 +1062,21 @@ export default function ProfileEditPage() {
                       key={lang.id}
                       type="button"
                       onClick={() => toggleLanguage(lang.code)}
-                      className={`p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all ${
+                      className={`p-4 rounded-2xl border text-left flex items-center justify-between transition-all ${
                         isSelected
-                          ? 'bg-brand-50 border-brand-500 ring-2 ring-brand-500/20 text-brand-700 font-bold'
-                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                          ? 'bg-brand-50 border-brand-500 ring-2 ring-brand-500/20 text-brand-900 font-bold'
+                          : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="text-xs font-semibold">{lang.name}</span>
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-slate-400" />
+                        <span className="text-sm">{lang.name}</span>
                       </div>
-                      {isSelected && <Check className="w-4 h-4 text-brand-500 flex-shrink-0" />}
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        isSelected ? 'bg-brand-500 text-white' : 'border border-slate-300'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                      </div>
                     </button>
                   );
                 })}
@@ -987,66 +1089,69 @@ export default function ProfileEditPage() {
             <div className="space-y-6">
               <div>
                 <h3 className="font-display font-bold text-xl text-slate-900">Step 7 — Professional Links</h3>
-                <p className="text-xs text-slate-500">
-                  Where people can connect with you externally (LinkedIn is the primary destination)
-                </p>
+                <p className="text-xs text-slate-500">Connect your professional social profiles, website, or portfolio</p>
               </div>
 
-              {/* LinkedIn (Highlighted Primary) */}
-              <div className="p-4 bg-brand-50/70 rounded-2xl border border-brand-200 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-brand-700 uppercase tracking-wider">
-                  <Linkedin className="w-4 h-4 fill-current" />
-                  <span>LinkedIn Profile URL (Recommended Primary)</span>
+              <div className="space-y-4">
+                {/* LinkedIn */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+                    <Linkedin className="w-3.5 h-3.5 text-[#0A66C2]" />
+                    <span>LinkedIn Profile URL</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    placeholder="https://linkedin.com/in/yourprofile"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
+                  />
                 </div>
-                <input
-                  type="url"
-                  value={linkedinUrl}
-                  onChange={(e) => setLinkedinUrl(e.target.value)}
-                  placeholder="https://linkedin.com/in/yourprofile"
-                  className="w-full px-4 py-2.5 bg-white border border-brand-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
 
-              {/* Personal Website */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                  Personal Website / Blog
-                </label>
-                <input
-                  type="url"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder="https://yourname.com"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
-                />
-              </div>
+                {/* Personal / Company Website */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Personal / Organisation Website</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={websiteUrl}
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    placeholder="https://yourorganization.org"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
+                  />
+                </div>
 
-              {/* GitHub */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                  GitHub Profile
-                </label>
-                <input
-                  type="url"
-                  value={githubUrl}
-                  onChange={(e) => setGithubUrl(e.target.value)}
-                  placeholder="https://github.com/yourusername"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
-                />
-              </div>
+                {/* GitHub */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+                    <Github className="w-3.5 h-3.5 text-slate-700" />
+                    <span>GitHub Profile URL (Optional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="https://github.com/yourhandle"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
+                  />
+                </div>
 
-              {/* Portfolio */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                  Portfolio / Behance / Dribbble / Scholar
-                </label>
-                <input
-                  type="url"
-                  value={portfolioUrl}
-                  onChange={(e) => setPortfolioUrl(e.target.value)}
-                  placeholder="https://scholar.google.com/... or portfolio link"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-brand-500"
-                />
+                {/* Portfolio */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+                    <LinkIcon className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Portfolio / Publications URL (Optional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={portfolioUrl}
+                    onChange={(e) => setPortfolioUrl(e.target.value)}
+                    placeholder="https://scholar.google.com/citations?user=..."
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -1093,7 +1198,7 @@ export default function ProfileEditPage() {
                       type="button"
                       disabled={saving}
                       onClick={() => handleSave('published')}
-                      className="btn-primary px-6 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-brand-sm"
+                      className="btn-primary px-6 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-brand-sm disabled:opacity-50"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       <span>{saving ? 'Publishing...' : 'Publish Profile Now'}</span>
@@ -1106,6 +1211,7 @@ export default function ProfileEditPage() {
                       <button
                         type="button"
                         onClick={() => handleSave('draft')}
+                        disabled={saving}
                         className="btn-secondary px-3 py-2 rounded-xl text-xs font-semibold text-slate-600"
                       >
                         Unpublish to Draft
@@ -1122,7 +1228,13 @@ export default function ProfileEditPage() {
             {activeStep > 1 ? (
               <button
                 type="button"
-                onClick={() => setActiveStep(prev => prev - 1)}
+                onClick={async () => {
+                  if (isHydrated) {
+                    await handleSave('draft');
+                  }
+                  setActiveStep(prev => prev - 1);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className="btn-secondary px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -1132,30 +1244,44 @@ export default function ProfileEditPage() {
               <div />
             )}
 
-            {activeStep < 8 ? (
+            <div className="flex items-center gap-3">
+              {/* Secondary Save Draft Button in footer */}
               <button
                 type="button"
-                disabled={saving}
-                onClick={async () => {
-                  const success = await handleSave();
-                  if (success !== false) {
-                    setActiveStep(prev => prev + 1);
-                  }
-                }}
-                className="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-brand-sm disabled:opacity-50"
+                onClick={() => handleSave('draft')}
+                disabled={saving || !isHydrated}
+                className="btn-secondary px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50"
               >
-                <span>{saving ? 'Saving...' : 'Save & Continue'}</span>
-                <ArrowRight className="w-4 h-4" />
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Draft</span>
               </button>
-            ) : (
-              <Link
-                href={`/profile/${username || user.username}`}
-                className="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-brand-sm"
-              >
-                <span>View Public Profile</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            )}
+
+              {activeStep < 8 ? (
+                <button
+                  type="button"
+                  disabled={saving || !isHydrated}
+                  onClick={async () => {
+                    const success = await handleSave('draft');
+                    if (success !== false) {
+                      setActiveStep(prev => prev + 1);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-brand-sm disabled:opacity-50"
+                >
+                  <span>{saving ? 'Saving...' : 'Save & Continue'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <Link
+                  href={`/profile/${username || user.username}`}
+                  className="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-brand-sm"
+                >
+                  <span>View Public Profile</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
+            </div>
           </div>
 
         </div>
