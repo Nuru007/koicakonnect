@@ -135,13 +135,13 @@ export default function HomePage() {
               toggleColor === 'blue' ? 'bg-brand-500' : 'bg-rose-500'
             }`}
           />
-          <span>KOICA Youth Leaders Program • 2026–2027</span>
+          <span>{t.home.heroBadge}</span>
         </div>
 
         {/* Hero Title with integrated automatic/interactive Toggle and Ash-to-Blue text animation */}
         <h1 className="font-display font-black text-4xl sm:text-6xl md:text-7xl lg:text-8xl text-slate-900 tracking-tight leading-[1.08] mb-5 max-w-5xl mx-auto flex flex-col items-center relative z-20 animate-in fade-in duration-700">
           <span className="inline-flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-4 md:gap-x-5 gap-y-2">
-            <span className="text-slate-900">Connect</span>
+            <span className="text-slate-900">{t.home.heroTitleConnect}</span>
             
             <span className="inline-flex items-center align-middle my-auto">
               <HeroToggle
@@ -158,20 +158,20 @@ export default function HomePage() {
                   toggleColor === 'blue' ? 'opacity-0' : 'opacity-100'
                 }`}
               >
-                Discover
+                {t.nav.discover}
               </span>
               <span
                 className={`absolute inset-0 bg-clip-text text-transparent bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600 transition-opacity duration-700 ease-out font-black ${
                   toggleColor === 'blue' ? 'opacity-100' : 'opacity-0'
                 }`}
               >
-                Discover
+                {t.nav.discover}
               </span>
             </span>
           </span>
 
           <span className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-700 tracking-tight mt-2 sm:mt-3 block">
-            with your fellow leaders across Africa
+            {t.home.heroTitleWith}
           </span>
         </h1>
 
@@ -217,7 +217,7 @@ export default function HomePage() {
               type="submit"
               className="btn-primary px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 flex-shrink-0"
             >
-              <span>Search</span>
+              <span>{t.home.searchBtn}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -226,7 +226,7 @@ export default function HomePage() {
         {/* Popular Keyword Filter Badges */}
         <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 max-w-3xl mx-auto px-2">
           <span className="text-[11px] sm:text-xs font-semibold text-slate-400 w-full sm:w-auto text-center mb-1 sm:mb-0">
-            Popular in Cohort:
+            {t.home.popularInCohort}
           </span>
           {quickKeywords.map((kw) => (
             <button
@@ -246,15 +246,15 @@ export default function HomePage() {
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-bold mb-2">
               <Users className="w-3.5 h-3.5" />
-              <span>Real-Time Discovery Feed</span>
+              <span>{t.home.realTimeFeed}</span>
             </div>
             <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900">
-              {recentUsers.length > 0 ? t.home.recentlyJoinedTitle : 'Discover Experts & Leaders'}
+              {recentUsers.length > 0 ? t.home.recentlyJoinedTitle : t.home.recentlyJoinedTitle}
             </h2>
             <p className="text-sm text-slate-500 mt-1">
               {recentUsers.length > 0
                 ? t.home.recentlyJoinedSubtitle
-                : 'Profiles are indexed directly from our live database with zero simulated data.'}
+                : t.home.recentlyJoinedSubtitle}
             </p>
           </div>
 
@@ -263,7 +263,7 @@ export default function HomePage() {
               href="/discover"
               className="text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1.5"
             >
-              <span>View All Registered People</span>
+              <span>{t.home.viewAllRegistered}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           )}
@@ -297,7 +297,7 @@ export default function HomePage() {
                 href="/discover"
                 className="btn-secondary px-6 py-3 rounded-xl text-xs font-bold"
               >
-                Explore Discover Page
+                {t.home.exploreDiscoverPage}
               </Link>
             </div>
           </div>
@@ -318,7 +318,7 @@ export default function HomePage() {
           <div className="relative z-10 max-w-3xl mb-12">
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-brand-500/20 text-brand-300 border border-brand-400/30 inline-block">
-                The Discovery Layer
+                {t.home.theDiscoveryLayer}
               </span>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-md">
                 <img
@@ -327,7 +327,7 @@ export default function HomePage() {
                   className="h-3.5 w-auto object-contain brightness-0 invert"
                 />
                 <span className="text-[11px] font-semibold text-white/90">
-                  KOICA Youth Leaders Program
+                  {t.home.koicaProgramBadge}
                 </span>
               </div>
             </div>
@@ -335,7 +335,7 @@ export default function HomePage() {
               {t.home.howItWorksTitle}
             </h2>
             <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-              KOICA CONNECT is intentionally not a social network. No endless feeds, no follower counts, no algorithm traps. Simply find authentic talent and connect where it matters.
+              {t.home.howItWorksSubtitle}
             </p>
           </div>
 
@@ -385,14 +385,14 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <QrCode className="w-6 h-6 text-brand-400" />
               <span className="text-xs text-slate-300">
-                Every published profile receives a unique, scannable QR Identity Pass.
+                {t.home.qrPassNotice}
               </span>
             </div>
             <Link
               href="/signup"
               className="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold"
             >
-              Get Your Digital Identity
+              {t.home.getDigitalIdentityBtn}
             </Link>
           </div>
         </div>

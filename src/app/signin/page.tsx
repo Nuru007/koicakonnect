@@ -4,10 +4,12 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Network, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle, ShieldAlert } from 'lucide-react';
 
 function SignInContent() {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -28,7 +30,7 @@ function SignInContent() {
     const res = await login(email.trim(), password);
 
     if (res.success) {
-      setSuccessMsg('Signing you in... Directing to your dashboard.');
+      setSuccessMsg(t.auth.loginSuccess);
       const redirectParam = searchParams.get('redirect');
       const isValidRedirect = Boolean(
         redirectParam &&
@@ -42,7 +44,7 @@ function SignInContent() {
       }, 350);
     } else {
       setLoading(false);
-      setError(res.error || 'Unable to sign in. Please check your credentials.');
+      setError(res.error || t.auth.invalidCredentials);
       setErrorCode(res.code || null);
     }
   };
@@ -62,9 +64,9 @@ function SignInContent() {
         <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3 animate-in fade-in duration-200">
           <ShieldAlert className="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
           <div>
-            <p className="font-bold">This account is currently unavailable.</p>
+            <p className="font-bold">{t.auth.accountDeactivatedTitle}</p>
             <p className="text-[11px] text-amber-800 mt-0.5">
-              Please contact KOICA CONNECT support if you believe this is a mistake.
+              {t.auth.accountDeactivatedDesc}
             </p>
           </div>
         </div>
@@ -82,7 +84,7 @@ function SignInContent() {
         {/* Email */}
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-            Email Address
+            {t.auth.emailLabel}
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -103,13 +105,13 @@ function SignInContent() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Password
+              {t.auth.passwordLabel}
             </label>
             <Link
               href="/forgot-password"
               className="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline"
             >
-              Forgot password?
+              {t.auth.forgotPasswordLink}
             </Link>
           </div>
           <div className="relative">
@@ -143,7 +145,7 @@ function SignInContent() {
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
             <>
-              <span>Sign In</span>
+              <span>{t.auth.signInBtn}</span>
               <ArrowRight className="w-4 h-4" />
             </>
           )}
@@ -154,6 +156,8 @@ function SignInContent() {
 }
 
 export default function SignInPage() {
+  const { t } = useLanguage();
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#F8FAFC]">
       <div className="max-w-md w-full surface-card rounded-3xl p-8 sm:p-10 border border-slate-200 bg-white shadow-xs relative z-10">
@@ -169,22 +173,22 @@ export default function SignInPage() {
             </span>
           </Link>
           <h2 className="font-display font-bold text-2xl sm:text-3xl text-slate-900">
-            Welcome Back
+            {t.auth.signInTitle}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Sign in to manage your discovery profile and QR pass.
+            {t.auth.signInSubtitle}
           </p>
         </div>
 
-        <Suspense fallback={<div className="text-center py-8 text-xs text-slate-400">Loading sign in...</div>}>
+        <Suspense fallback={<div className="text-center py-8 text-xs text-slate-400">{t.common.loading}</div>}>
           <SignInContent />
         </Suspense>
 
         <div className="mt-6 pt-6 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-500">
-            Don&apos;t have a profile yet?{' '}
+            {t.auth.noAccountPrompt}{' '}
             <Link href="/signup" className="text-brand-600 font-bold hover:underline">
-              Create your profile
+              {t.auth.createAccountLink}
             </Link>
           </p>
         </div>

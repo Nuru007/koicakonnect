@@ -189,7 +189,7 @@ export const Navbar: React.FC = () => {
                       className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-600 transition-colors"
                     >
                       <Edit3 className="w-4 h-4 text-slate-400" />
-                      Edit Profile
+                      {t.dashboard.editProfile}
                     </Link>
                     <Link
                       href="/dashboard/qr"
@@ -285,7 +285,7 @@ export const Navbar: React.FC = () => {
           </nav>
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Language</span>
+            <span className="text-xs font-semibold text-slate-500">{t.footer.languageSection}</span>
             <div className="flex gap-1">
               {languages.map((l) => (
                 <button

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Layers, Sparkles } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export interface CategoryItem {
   num: string;
@@ -54,6 +55,7 @@ const CATEGORIES: CategoryItem[] = [
 const EXTENDED_CATEGORIES = [...CATEGORIES, ...CATEGORIES, ...CATEGORIES];
 
 export const AutoFlowCategoryCarousel: React.FC = () => {
+  const { t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(CATEGORIES.length); // Start in middle set
   const [isTransitioning, setIsTransitioning] = useState(true);
   const total = CATEGORIES.length;
@@ -96,18 +98,16 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/25 text-sky-200 text-xs font-bold uppercase tracking-wider mb-3.5 shadow-2xs backdrop-blur-md">
               <Layers className="w-3.5 h-3.5 text-sky-300" />
-              <span>What We Do</span>
-              <span>•</span>
-              <span>Focus Disciplines</span>
+              <span>{t.home.whatWeDoBadge}</span>
             </div>
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight">
-              We Connect Leaders Across<br className="hidden sm:inline" /> High-Impact Fields
+              {t.home.whatWeDoTitle}
             </h2>
           </div>
 
           <div className="flex flex-col items-start md:items-end gap-4 max-w-md">
             <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed md:text-right">
-              Connecting researchers, founders, and technical leaders across global innovation ecosystems.
+              {t.home.whatWeDoSubtitle}
             </p>
             
             {/* Pop-Out "View All Categories" Button */}
@@ -115,7 +115,7 @@ export const AutoFlowCategoryCarousel: React.FC = () => {
               href="/categories"
               className="inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-white text-blue-950 hover:bg-sky-50 font-extrabold text-xs sm:text-sm shadow-xl shadow-blue-950/40 hover:shadow-cyan-300/50 hover:scale-105 transition-all group flex-shrink-0 border-2 border-white"
             >
-              <span>View All Categories</span>
+              <span>{t.home.viewAllCategories}</span>
               <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center group-hover:bg-blue-700 transition-colors shadow-2xs">
                 <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
               </div>

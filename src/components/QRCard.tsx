@@ -404,7 +404,7 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
             </span>
           </div>
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-white/10 text-brand-300 border border-white/15">
-            Digital Identity
+            {t.qrPage.shareTitle}
           </span>
         </div>
 
@@ -449,7 +449,7 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
         <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800 relative z-10">
           <span className="flex items-center gap-1">
             <Shield className="w-3.5 h-3.5 text-brand-400" />
-            Verified Discovery Profile
+            {t.common.verifiedProfile}
           </span>
           <span className="font-mono text-slate-500">@{profile.username}</span>
         </div>
@@ -475,7 +475,7 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
           ) : (
             <Download className="w-4 h-4" />
           )}
-          <span>{downloading ? 'Downloading...' : 'Download Card'}</span>
+          <span>{downloading ? t.common.loading : t.qrPage.downloadPng}</span>
         </button>
 
         <button
@@ -483,7 +483,7 @@ export const QRCard: React.FC<QRCardProps> = ({ profile, compact = false }) => {
           className="btn-secondary py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs"
         >
           <Share2 className="w-4 h-4 text-brand-500" />
-          <span>Share</span>
+          <span>{t.common.share}</span>
         </button>
       </div>
     </div>

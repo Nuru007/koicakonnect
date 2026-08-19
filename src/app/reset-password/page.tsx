@@ -4,12 +4,14 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Network, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { resetPassword } = useAuth();
+  const { t } = useLanguage();
 
   const token = searchParams.get('token') || '';
 
@@ -25,12 +27,12 @@ function ResetPasswordContent() {
     setError(null);
 
     if (!token) {
-      setError('Invalid or missing password reset token. Please request a new link.');
+      setError('Invalid or missing password reset token.');
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
+      setError(t.auth.passwordRequirements);
       return;
     }
 
@@ -46,7 +48,7 @@ function ResetPasswordContent() {
     if (res.success) {
       setSuccess(true);
     } else {
-      setError(res.error || 'Failed to reset password. The link may have expired.');
+      setError(res.error || t.common.saveFailed);
     }
   };
 
@@ -55,10 +57,10 @@ function ResetPasswordContent() {
       <div className="text-center space-y-4">
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
           <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-500" />
-          <span>Invalid or missing reset token. Please request a new password reset link.</span>
+          <span>Invalid or missing reset token.</span>
         </div>
         <Link href="/forgot-password" className="btn-primary py-2.5 px-4 rounded-xl text-xs font-bold inline-block shadow-brand-sm">
-          Request New Link
+          {t.auth.forgotPasswordTitle}
         </Link>
       </div>
     );
@@ -70,10 +72,7 @@ function ResetPasswordContent() {
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-start gap-3 text-left">
           <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600 mt-0.5" />
           <div>
-            <p className="font-bold">Password Reset Successfully</p>
-            <p className="text-[11px] text-emerald-700 font-normal mt-1">
-              Your password has been updated. You can now sign in with your new password.
-            </p>
+            <p className="font-bold">{t.auth.passwordResetSuccess}</p>
           </div>
         </div>
 
@@ -81,7 +80,7 @@ function ResetPasswordContent() {
           href="/signin"
           className="w-full btn-primary py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-brand-sm"
         >
-          <span>Sign In to Your Account</span>
+          <span>{t.auth.signInBtn}</span>
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
@@ -99,7 +98,7 @@ function ResetPasswordContent() {
 
       <div>
         <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-          New Password
+          {t.auth.passwordLabel}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -125,7 +124,7 @@ function ResetPasswordContent() {
 
       <div>
         <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-          Confirm New Password
+          {t.auth.resetPasswordTitle}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -151,7 +150,7 @@ function ResetPasswordContent() {
           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
         ) : (
           <>
-            <span>Update Password</span>
+            <span>{t.common.save}</span>
             <ArrowRight className="w-4 h-4" />
           </>
         )}
@@ -161,6 +160,8 @@ function ResetPasswordContent() {
 }
 
 export default function ResetPasswordPage() {
+  const { t } = useLanguage();
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#F8FAFC]">
       <div className="max-w-md w-full surface-card rounded-3xl p-8 sm:p-10 border border-slate-200 bg-white shadow-xs relative z-10">
@@ -176,14 +177,14 @@ export default function ResetPasswordPage() {
             </span>
           </Link>
           <h2 className="font-display font-bold text-2xl sm:text-3xl text-slate-900">
-            Set New Password
+            {t.auth.resetPasswordTitle}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Choose a secure password with at least 8 characters.
+            {t.auth.resetPasswordSubtitle}
           </p>
         </div>
 
-        <Suspense fallback={<div className="text-center py-8 text-xs text-slate-400">Loading form...</div>}>
+        <Suspense fallback={<div className="text-center py-8 text-xs text-slate-400">{t.common.loading}</div>}>
           <ResetPasswordContent />
         </Suspense>
       </div>

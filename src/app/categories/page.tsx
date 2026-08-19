@@ -37,13 +37,13 @@ export default function CategoriesPage() {
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-brand-600 text-xs font-bold mb-3 border border-slate-200 shadow-2xs">
             <Layers className="w-3.5 h-3.5" />
-            <span>Focus Disciplines</span>
+            <span>{t.categoriesPage.badge}</span>
           </div>
           <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-slate-900 tracking-tight mb-4">
-            Browse by Industry & Field
+            {t.categoriesPage.title}
           </h1>
           <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto">
-            Discover professionals, domain researchers, and technical leaders organized across database-backed industry tracks.
+            {t.categoriesPage.subtitle}
           </p>
         </div>
 
@@ -83,7 +83,7 @@ export default function CategoriesPage() {
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-600 transition-colors mt-4">
-                  <span>Explore talent</span>
+                  <span>{t.categoriesPage.exploreTalent}</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </div>
               </Link>

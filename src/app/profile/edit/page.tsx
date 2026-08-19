@@ -91,34 +91,6 @@ export default function ProfileEditPage() {
   const [availableInterests, setAvailableInterests] = useState<Interest[]>([]);
   const [availableLanguages, setAvailableLanguages] = useState<Language[]>([]);
 
-  // Calculate most appropriate incomplete step to resume from
-  const determineInitialStep = (u: UserProfile): number => {
-    if (u.status === 'published') return 1;
-
-    const hasBasic = Boolean(u.name && u.role && u.country);
-    if (!hasBasic) return 1;
-
-    const hasBio = Boolean(u.bio && u.bio.trim().length >= 10);
-    if (!hasBio) return 2;
-
-    const hasSkills = Boolean(u.skills && u.skills.length >= 1);
-    if (!hasSkills) return 3;
-
-    const hasInterests = Boolean(u.interests && u.interests.length >= 1);
-    if (!hasInterests) return 4;
-
-    const hasCategories = Boolean(u.categories && u.categories.length >= 1);
-    if (!hasCategories) return 5;
-
-    const hasLanguages = Boolean(u.languages && u.languages.length >= 1);
-    if (!hasLanguages) return 6;
-
-    const hasLinks = Boolean(u.links && u.links.length >= 1);
-    if (!hasLinks) return 7;
-
-    return 8;
-  };
-
   // Populate data when user initially loads (Hydration Guard)
   useEffect(() => {
     if (user && loadedUserIdRef.current !== user.id) {
@@ -146,35 +118,28 @@ export default function ProfileEditPage() {
       if (user.languages && user.languages.length > 0) {
         setSelectedLanguages(user.languages.map((l) => l.code));
       }
-
       if (user.links && user.links.length > 0) {
         const li = user.links.find((l) => l.platform === 'linkedin');
         const web = user.links.find((l) => l.platform === 'website');
         const gh = user.links.find((l) => l.platform === 'github');
-        const pf = user.links.find((l) => l.platform === 'portfolio');
+        const port = user.links.find((l) => l.platform === 'portfolio');
         const oth = user.links.find((l) => l.platform === 'other');
-
         if (li) setLinkedinUrl(li.url);
         if (web) setWebsiteUrl(web.url);
         if (gh) setGithubUrl(gh.url);
-        if (pf) setPortfolioUrl(pf.url);
+        if (port) setPortfolioUrl(port.url);
         if (oth) setOtherUrl(oth.url);
       }
 
-      const initialStep = determineInitialStep(user);
-      setActiveStep(initialStep);
       setIsHydrated(true);
-      if (user.updatedAt) {
-        setLastSavedTime(new Date(user.updatedAt));
-      }
     }
   }, [user]);
 
-  // Load taxonomies from DB
+  // Load taxonomies
   useEffect(() => {
     async function loadTaxonomies() {
       try {
-        const res = await fetch('/api/taxonomies');
+        const res = await fetch('/api/taxonomies', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setAvailableCategories(data.categories || []);
@@ -189,17 +154,16 @@ export default function ProfileEditPage() {
     loadTaxonomies();
   }, []);
 
+  // Image Upload handler with client-side resize and compression
   const handleImageFile = (file: File) => {
-    if (!file) return;
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-    if (!validTypes.includes(file.type.toLowerCase()) && !file.name.match(/\.(png|jpe?g|webp)$/i)) {
-      setError('Please upload a valid PNG, JPG, or JPEG image file.');
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload a valid image file (PNG, JPG, JPEG, WEBP).');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      setError(`Image file is too large (${sizeMB}MB). The maximum allowed file size is 10MB. Please choose an image smaller than 10MB.`);
+      setError(`Image file is too large (${sizeMB}MB). Maximum file size is 10MB.`);
       return;
     }
 
@@ -208,13 +172,11 @@ export default function ProfileEditPage() {
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        // Resize and crop to square avatar with high quality
         const canvas = document.createElement('canvas');
         const maxDim = 500;
         const width = img.width;
         const height = img.height;
         
-        // Center crop to square
         const minSide = Math.min(width, height);
         const startX = (width - minSide) / 2;
         const startY = (height - minSide) / 2;
@@ -246,7 +208,6 @@ export default function ProfileEditPage() {
 
     const targetStatus = newStatus || status || 'draft';
 
-    // Client-side validation before publishing
     if (targetStatus === 'published') {
       if (!name || !name.trim()) {
         setError('Please provide your Full Name in Step 1 before publishing.');
@@ -311,13 +272,13 @@ export default function ProfileEditPage() {
         }, 3500);
         return true;
       } else {
-        const errorMsg = data.error?.message || data.error || 'Failed to save changes. Please try again.';
+        const errorMsg = data.error?.message || data.error || t.profileBuilder.saveError;
         setError(errorMsg);
         setSaveStatus('error');
         return false;
       }
     } catch (err: any) {
-      setError(err.message || 'Network error. Your changes have not been lost, please try again.');
+      setError(err.message || t.profileBuilder.saveError);
       setSaveStatus('error');
       return false;
     } finally {
@@ -355,24 +316,26 @@ export default function ProfileEditPage() {
 
   const toggleLanguage = (code: string) => {
     setSelectedLanguages(prev =>
-      prev.includes(code) ? prev.filter(l => l !== code) : [...prev, code]
+      prev.includes(code)
+        ? prev.length > 1 ? prev.filter(l => l !== code) : prev
+        : [...prev, code]
     );
   };
 
-  // Construct preview profile object
-  const previewProfile = useMemo(() => ({
-    id: user?.id || 'preview_id',
-    name: name || 'Your Name',
+  // Preview profile state for Step 8 live simulation
+  const previewProfile = useMemo((): UserProfile => ({
+    id: user?.id || 'preview',
+    username: username || user?.username || 'user',
     email: user?.email || '',
-    username: username || 'your-handle',
-    role: role || 'Your Profession / Role',
-    organisation: organisation || 'Your Organisation',
-    country: country || 'Country',
-    city: city || 'City',
-    bio: bio || 'Your bio will appear here...',
+    name: name || user?.name || 'Your Full Name',
+    role: role || 'Your Profession',
+    organisation: organisation || '',
+    country: country || '',
+    city: city || '',
+    bio: bio || '',
     profileImage: profileImage || '',
     preferredLanguage: preferredLanguage || 'en',
-    status: status,
+    status: status || 'draft',
     isDiscoverable: status === 'published',
     createdAt: user?.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -409,7 +372,7 @@ export default function ProfileEditPage() {
     return (
       <div className="min-h-screen bg-[#F8FAFC] py-20 flex flex-col items-center justify-center text-center px-4">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-xs font-semibold text-slate-500">Loading Profile Builder...</p>
+        <p className="text-xs font-semibold text-slate-500">{t.common.loading}</p>
       </div>
     );
   }
@@ -421,12 +384,12 @@ export default function ProfileEditPage() {
           <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-4">
             <User className="w-6 h-6" />
           </div>
-          <h2 className="font-display font-bold text-xl text-slate-900 mb-2">Sign In Required</h2>
+          <h2 className="font-display font-bold text-xl text-slate-900 mb-2">{t.profileBuilder.signInRequiredTitle}</h2>
           <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-            Please sign in to your KOICA CONNECT account to build and edit your profile.
+            {t.profileBuilder.signInRequiredDesc}
           </p>
           <Link href="/signin" className="btn-primary w-full py-3 rounded-xl text-xs font-bold block text-center shadow-brand-sm">
-            Sign In to Profile Builder
+            {t.profileBuilder.signInToBuilderBtn}
           </Link>
         </div>
       </div>
@@ -441,10 +404,10 @@ export default function ProfileEditPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="font-display font-black text-2xl sm:text-3xl text-slate-900">
-              Profile Builder
+              {t.profileBuilder.pageTitle}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Build your digital identity and make yourself discoverable globally
+              {t.profileBuilder.pageSubtitle}
             </p>
           </div>
 
@@ -454,25 +417,25 @@ export default function ProfileEditPage() {
               {saveStatus === 'saving' ? (
                 <>
                   <div className="w-3 h-3 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-                  <span>Saving...</span>
+                  <span>{t.profileBuilder.savingBtn}</span>
                 </>
               ) : saveStatus === 'saved' ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-semibold">Draft saved ✓</span>
+                  <span className="text-emerald-700 font-semibold">{t.common.savedCheck}</span>
                 </>
               ) : saveStatus === 'error' ? (
                 <>
                   <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
-                  <span className="text-rose-600 font-semibold">Couldn't save. Try again.</span>
+                  <span className="text-rose-600 font-semibold">{t.profileBuilder.saveError}</span>
                 </>
               ) : lastSavedTime ? (
                 <>
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Saved {lastSavedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>{t.common.lastSaved} {lastSavedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </>
               ) : (
-                <span>Draft (Private)</span>
+                <span>{t.profileBuilder.draftPrivateBadge}</span>
               )}
             </div>
 
@@ -484,17 +447,17 @@ export default function ProfileEditPage() {
               className="btn-secondary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{saving ? 'Saving...' : 'Save Draft'}</span>
+              <span>{saving ? t.profileBuilder.savingBtn : t.profileBuilder.saveDraftBtn}</span>
             </button>
 
             {status === 'published' ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Published & Live
+                {t.profileBuilder.publishedLiveBadge}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                Draft (Private)
+                {t.profileBuilder.draftPrivateBadge}
               </span>
             )}
           </div>
@@ -510,18 +473,18 @@ export default function ProfileEditPage() {
             <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${status === 'published' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
             <div>
               <p className="font-bold text-xs">
-                {status === 'published' ? 'Your profile is live' : 'Your profile is private (Draft Mode)'}
+                {status === 'published' ? t.profileBuilder.publishedBannerTitle : t.profileBuilder.draftBannerTitle}
               </p>
               <p className="text-[11px] opacity-80 mt-0.5">
                 {status === 'published'
-                  ? 'People can discover your profile on Koica Connect search and category filters.'
-                  : 'Your progress is automatically saved to your private account. Complete your profile and hit Publish in Step 8 to appear on Discover.'}
+                  ? t.profileBuilder.publishedBannerDesc
+                  : t.profileBuilder.draftBannerDesc}
               </p>
             </div>
           </div>
 
           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/70 border border-current">
-            Step {activeStep} of 8
+            {t.profileBuilder.stepOf.replace('{step}', String(activeStep))}
           </span>
         </div>
 
@@ -593,14 +556,14 @@ export default function ProfileEditPage() {
           {activeStep === 1 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 1 — Basic Information</h3>
-                <p className="text-xs text-slate-500">Your core identity details on Koica Connect</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">{t.profileBuilder.step1Title}</h3>
+                <p className="text-xs text-slate-500">{t.profileBuilder.step1Subtitle}</p>
               </div>
 
               {/* Headshot Upload */}
               <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Headshot Photo
+                  {t.profileBuilder.headshotLabel}
                 </label>
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                   <div className="relative group flex-shrink-0">
@@ -630,7 +593,7 @@ export default function ProfileEditPage() {
                   <div className="flex-1 space-y-2 text-center sm:text-left">
                     <label className="btn-primary py-2 px-4 rounded-xl text-xs font-bold inline-flex items-center gap-2 cursor-pointer shadow-brand-sm">
                       <Camera className="w-3.5 h-3.5" />
-                      <span>Upload Profile Photo</span>
+                      <span>{t.profileBuilder.uploadPhotoBtn}</span>
                       <input
                         type="file"
                         accept="image/png,image/jpeg,image/jpg,image/webp"
@@ -642,7 +605,7 @@ export default function ProfileEditPage() {
                       />
                     </label>
                     <p className="text-[11px] text-slate-500">
-                      Recommended: High quality square PNG or JPG, max 10MB.
+                      {t.profileBuilder.photoTip}
                     </p>
                   </div>
                 </div>
@@ -652,21 +615,21 @@ export default function ProfileEditPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Full Name <span className="text-rose-500">*</span>
+                    {t.profileBuilder.fullNameLabel} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Dr. Ngozi Okonjo"
+                    placeholder={t.profileBuilder.fullNamePlaceholder}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Username / Handle
+                    {t.profileBuilder.usernameLabel}
                   </label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-slate-400">@</span>
@@ -674,7 +637,7 @@ export default function ProfileEditPage() {
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
-                      placeholder="ngozi-okonjo"
+                      placeholder="username"
                       className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-mono"
                     />
                   </div>
@@ -685,27 +648,27 @@ export default function ProfileEditPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Current Role / Profession <span className="text-rose-500">*</span>
+                    {t.profileBuilder.roleLabel} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    placeholder="e.g. Director General, Economist"
+                    placeholder={t.profileBuilder.rolePlaceholder}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Organisation / Institution
+                    {t.profileBuilder.orgLabel}
                   </label>
                   <input
                     type="text"
                     value={organisation}
                     onChange={(e) => setOrganisation(e.target.value)}
-                    placeholder="e.g. World Trade Organization"
+                    placeholder={t.profileBuilder.orgPlaceholder}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                   />
                 </div>
@@ -715,7 +678,7 @@ export default function ProfileEditPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Country <span className="text-rose-500">*</span>
+                    {t.profileBuilder.countryLabel} <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <select
@@ -723,7 +686,7 @@ export default function ProfileEditPage() {
                       onChange={(e) => setCountry(e.target.value)}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all appearance-none cursor-pointer"
                     >
-                      <option value="">Select country...</option>
+                      <option value="">{t.profileBuilder.selectCountry}</option>
                       {COUNTRIES.map((c) => (
                         <option key={c.code} value={c.name}>
                           {c.flag} {c.name}
@@ -736,13 +699,13 @@ export default function ProfileEditPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    City
+                    {t.profileBuilder.cityLabel}
                   </label>
                   <input
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="e.g. Abuja, Geneva"
+                    placeholder={t.profileBuilder.cityPlaceholder}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                   />
                 </div>
@@ -754,29 +717,29 @@ export default function ProfileEditPage() {
           {activeStep === 2 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 2 — About & Bio</h3>
-                <p className="text-xs text-slate-500">Provide a professional summary of your background, experience, and vision</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">{t.profileBuilder.step2Title}</h3>
+                <p className="text-xs text-slate-500">{t.profileBuilder.step2Subtitle}</p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                  Professional Bio
+                  {t.profileBuilder.bioLabel}
                 </label>
                 <textarea
                   rows={5}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Share your career journey, key accomplishments, KOICA fellowship experience, and areas you are passionate about collaborating in..."
+                  placeholder={t.profileBuilder.bioPlaceholder}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all leading-relaxed"
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Tip: A compelling bio helps international partners and alumni connect with you for opportunities.
+                  {t.profileBuilder.bioTip}
                 </p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                  Preferred Language of Communication
+                  {t.profileBuilder.preferredLangLabel}
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {[
@@ -806,14 +769,14 @@ export default function ProfileEditPage() {
           {activeStep === 3 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 3 — Skills & Areas of Expertise</h3>
-                <p className="text-xs text-slate-500">Highlight your core capabilities and technical skills</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">{t.profileBuilder.step3Title}</h3>
+                <p className="text-xs text-slate-500">{t.profileBuilder.step3Subtitle}</p>
               </div>
 
               {/* Selected Skills Chips */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 min-h-[80px]">
                 <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
-                  Your Selected Skills ({selectedSkills.length})
+                  {t.profileBuilder.selectedSkillsTitle} ({selectedSkills.length})
                 </label>
                 {selectedSkills.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
@@ -835,7 +798,7 @@ export default function ProfileEditPage() {
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400 italic">
-                    No skills added yet. Select from below or type a custom skill.
+                    {t.profileBuilder.noSkillsYet}
                   </p>
                 )}
               </div>
@@ -843,7 +806,7 @@ export default function ProfileEditPage() {
               {/* Custom Skill Input */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                  Add Custom Skill
+                  {t.profileBuilder.addCustomSkillLabel}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -856,7 +819,7 @@ export default function ProfileEditPage() {
                         addCustomSkill();
                       }
                     }}
-                    placeholder="e.g. Sustainable Agriculture, Public Policy, Cloud Architecture"
+                    placeholder={t.profileBuilder.addCustomSkillPlaceholder}
                     className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                   />
                   <button
@@ -866,7 +829,7 @@ export default function ProfileEditPage() {
                     className="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Add</span>
+                    <span>{t.profileBuilder.addBtn}</span>
                   </button>
                 </div>
               </div>
@@ -875,7 +838,7 @@ export default function ProfileEditPage() {
               {availableSkills.length > 0 && (
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                    Suggested Skills
+                    {t.profileBuilder.suggestedSkills}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {availableSkills.map((s) => {
@@ -908,14 +871,14 @@ export default function ProfileEditPage() {
           {activeStep === 4 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 4 — Areas of Interest</h3>
-                <p className="text-xs text-slate-500">Select topics and fields you are interested in collaborating on</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">{t.profileBuilder.step4Title}</h3>
+                <p className="text-xs text-slate-500">{t.profileBuilder.step4Subtitle}</p>
               </div>
 
               {/* Selected Interests Chips */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 min-h-[80px]">
                 <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
-                  Your Selected Interests ({selectedInterests.length})
+                  {t.profileBuilder.selectedInterestsTitle} ({selectedInterests.length})
                 </label>
                 {selectedInterests.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
@@ -937,7 +900,7 @@ export default function ProfileEditPage() {
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400 italic">
-                    No interests added yet. Pick from below or type a custom interest.
+                    {t.profileBuilder.noInterestsYet}
                   </p>
                 )}
               </div>
@@ -945,7 +908,7 @@ export default function ProfileEditPage() {
               {/* Custom Interest Input */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                  Add Custom Interest
+                  {t.profileBuilder.addCustomInterestLabel}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -958,7 +921,7 @@ export default function ProfileEditPage() {
                         addCustomInterest();
                       }
                     }}
-                    placeholder="e.g. AI for Healthcare, Renewable Microgrids, Climate Finance"
+                    placeholder={t.profileBuilder.addCustomInterestPlaceholder}
                     className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                   />
                   <button
@@ -968,7 +931,7 @@ export default function ProfileEditPage() {
                     className="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Add</span>
+                    <span>{t.profileBuilder.addBtn}</span>
                   </button>
                 </div>
               </div>
@@ -977,7 +940,7 @@ export default function ProfileEditPage() {
               {availableInterests.length > 0 && (
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                    Suggested Interests
+                    {t.profileBuilder.suggestedInterests}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {availableInterests.map((int) => {
@@ -1010,8 +973,8 @@ export default function ProfileEditPage() {
           {activeStep === 5 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 5 — Focus Disciplines</h3>
-                <p className="text-xs text-slate-500">Choose the KOICA focus disciplines and industry categories that represent your work</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">{t.profileBuilder.step5Title}</h3>
+                <p className="text-xs text-slate-500">{t.profileBuilder.step5Subtitle}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1050,8 +1013,8 @@ export default function ProfileEditPage() {
           {activeStep === 6 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 6 — Spoken Languages</h3>
-                <p className="text-xs text-slate-500">Indicate the languages you speak to connect across international chapters</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">{t.profileBuilder.step6Title}</h3>
+                <p className="text-xs text-slate-500">{t.profileBuilder.step6Subtitle}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1088,8 +1051,8 @@ export default function ProfileEditPage() {
           {activeStep === 7 && (
             <div className="space-y-6">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 7 — Professional Links</h3>
-                <p className="text-xs text-slate-500">Connect your professional social profiles, website, or portfolio</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">{t.profileBuilder.step7Title}</h3>
+                <p className="text-xs text-slate-500">{t.profileBuilder.step7Subtitle}</p>
               </div>
 
               <div className="space-y-4">
@@ -1097,7 +1060,7 @@ export default function ProfileEditPage() {
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
                     <Linkedin className="w-3.5 h-3.5 text-[#0A66C2]" />
-                    <span>LinkedIn Profile URL</span>
+                    <span>{t.profileBuilder.linkedinLabel}</span>
                   </label>
                   <input
                     type="url"
@@ -1112,7 +1075,7 @@ export default function ProfileEditPage() {
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Personal / Organisation Website</span>
+                    <span>{t.profileBuilder.websiteLabel}</span>
                   </label>
                   <input
                     type="url"
@@ -1127,7 +1090,7 @@ export default function ProfileEditPage() {
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
                     <Github className="w-3.5 h-3.5 text-slate-700" />
-                    <span>GitHub Profile URL (Optional)</span>
+                    <span>{t.profileBuilder.githubLabel}</span>
                   </label>
                   <input
                     type="url"
@@ -1142,7 +1105,7 @@ export default function ProfileEditPage() {
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
                     <LinkIcon className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Portfolio / Publications URL (Optional)</span>
+                    <span>{t.profileBuilder.portfolioLabel}</span>
                   </label>
                   <input
                     type="url"
@@ -1160,22 +1123,22 @@ export default function ProfileEditPage() {
           {activeStep === 8 && (
             <div className="space-y-8">
               <div>
-                <h3 className="font-display font-bold text-xl text-slate-900">Step 8 — Live Profile Preview & Publish</h3>
-                <p className="text-xs text-slate-500">Review how your profile and digital pass will appear to the world</p>
+                <h3 className="font-display font-bold text-xl text-slate-900">{t.profileBuilder.step8Title}</h3>
+                <p className="text-xs text-slate-500">{t.profileBuilder.step8Subtitle}</p>
               </div>
 
               {/* Live Preview Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                    Discover Card Preview
+                    {t.profileBuilder.discoverCardPreview}
                   </h4>
                   <ProfileCard profile={previewProfile as any} />
                 </div>
 
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                    Digital QR Identity Card Preview
+                    {t.profileBuilder.qrCardPreview}
                   </h4>
                   <QRCard profile={previewProfile as any} compact />
                 </div>
@@ -1185,10 +1148,10 @@ export default function ProfileEditPage() {
               <div className="p-6 bg-gradient-to-r from-brand-50 to-cyan-50 rounded-3xl border border-brand-200 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                   <h4 className="font-display font-bold text-base text-slate-900">
-                    Ready to make your profile live?
+                    {t.profileBuilder.readyToPublishTitle}
                   </h4>
                   <p className="text-xs text-slate-600">
-                    Publishing immediately makes you discoverable across skills, categories, and keywords.
+                    {t.profileBuilder.readyToPublishDesc}
                   </p>
                 </div>
 
@@ -1201,12 +1164,12 @@ export default function ProfileEditPage() {
                       className="btn-primary px-6 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-brand-sm disabled:opacity-50"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>{saving ? 'Publishing...' : 'Publish Profile Now'}</span>
+                      <span>{saving ? t.profileBuilder.savingBtn : t.profileBuilder.publishNowBtn}</span>
                     </button>
                   ) : (
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                        <Check className="w-4 h-4" /> Published & Live
+                        <Check className="w-4 h-4" /> {t.profileBuilder.publishedLiveBadge}
                       </span>
                       <button
                         type="button"
@@ -1214,7 +1177,7 @@ export default function ProfileEditPage() {
                         disabled={saving}
                         className="btn-secondary px-3 py-2 rounded-xl text-xs font-semibold text-slate-600"
                       >
-                        Unpublish to Draft
+                        {t.profileBuilder.unpublishBtn}
                       </button>
                     </div>
                   )}
@@ -1238,7 +1201,7 @@ export default function ProfileEditPage() {
                 className="btn-secondary px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Previous Step</span>
+                <span>{t.profileBuilder.previousStepBtn}</span>
               </button>
             ) : (
               <div />
@@ -1253,7 +1216,7 @@ export default function ProfileEditPage() {
                 className="btn-secondary px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Save className="w-3.5 h-3.5" />
-                <span>Save Draft</span>
+                <span>{t.profileBuilder.saveDraftBtn}</span>
               </button>
 
               {activeStep < 8 ? (
@@ -1269,7 +1232,7 @@ export default function ProfileEditPage() {
                   }}
                   className="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-brand-sm disabled:opacity-50"
                 >
-                  <span>{saving ? 'Saving...' : 'Save & Continue'}</span>
+                  <span>{saving ? t.profileBuilder.savingBtn : t.profileBuilder.saveAndContinueBtn}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               ) : (
@@ -1277,7 +1240,7 @@ export default function ProfileEditPage() {
                   href={`/profile/${username || user.username}`}
                   className="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-brand-sm"
                 >
-                  <span>View Public Profile</span>
+                  <span>{t.profileBuilder.viewPublicProfileBtn}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               )}

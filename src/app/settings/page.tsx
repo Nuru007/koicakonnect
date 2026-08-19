@@ -80,15 +80,15 @@ export default function SettingsPage() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setSuccessMsg('Settings updated successfully');
+        setSuccessMsg(t.common.saved);
         setPassword('');
         setConfirmPassword('');
         await refreshUser();
       } else {
-        setErrorMsg(data.error || 'Failed to update settings');
+        setErrorMsg(data.error || t.common.saveFailed);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error updating settings');
+      setErrorMsg(err.message || t.common.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -129,17 +129,17 @@ export default function SettingsPage() {
             className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-brand-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Dashboard</span>
+            <span>{t.common.back}</span>
           </Link>
         </div>
 
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-display font-black text-2xl sm:text-3xl text-slate-900">
-            Account Settings
+            {t.settings.title}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Manage your account security, preferred language, and discovery preferences
+            {t.settings.subtitle}
           </p>
         </div>
 
@@ -163,13 +163,13 @@ export default function SettingsPage() {
           <div className="surface-card rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-xs space-y-4">
             <h3 className="font-display font-bold text-base text-slate-900 flex items-center gap-2">
               <Shield className="w-4 h-4 text-brand-500" />
-              <span>Identity & Account</span>
+              <span>{t.settings.accountInfoTitle}</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                  Email
+                  {t.auth.emailLabel}
                 </label>
                 <input
                   type="email"
@@ -181,7 +181,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                  Username Slug
+                  {t.profileBuilder.usernameLabel}
                 </label>
                 <input
                   type="text"
@@ -198,7 +198,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <h3 className="font-display font-bold text-base text-slate-900 flex items-center gap-2">
                 <Eye className="w-4 h-4 text-brand-500" />
-                <span>Discovery Visibility & Status</span>
+                <span>{t.dashboard.statusTitle}</span>
               </h3>
             </div>
 
@@ -213,9 +213,9 @@ export default function SettingsPage() {
                   className="mt-1 text-brand-600 focus:ring-brand-500"
                 />
                 <div>
-                  <span className="text-xs font-bold text-slate-800 block">Published (Public)</span>
+                  <span className="text-xs font-bold text-slate-800 block">{t.dashboard.statusPublished}</span>
                   <span className="text-[11px] text-slate-500 block leading-relaxed">
-                    Your profile is live and discoverable in global directory search, categories, and country filters.
+                    {t.profileBuilder.publishedBannerDesc}
                   </span>
                 </div>
               </label>
@@ -230,9 +230,9 @@ export default function SettingsPage() {
                   className="mt-1 text-brand-600 focus:ring-brand-500"
                 />
                 <div>
-                  <span className="text-xs font-bold text-slate-800 block">Draft / Unlisted</span>
+                  <span className="text-xs font-bold text-slate-800 block">{t.dashboard.statusDraft}</span>
                   <span className="text-[11px] text-slate-500 block leading-relaxed">
-                    Your profile is hidden from the public directory. Only accessible via your direct link.
+                    {t.profileBuilder.draftBannerDesc}
                   </span>
                 </div>
               </label>
@@ -247,9 +247,9 @@ export default function SettingsPage() {
                   className="mt-1 text-brand-600 focus:ring-brand-500"
                 />
                 <div>
-                  <span className="text-xs font-bold text-slate-800 block">Private</span>
+                  <span className="text-xs font-bold text-slate-800 block">{t.dashboard.statusPrivate}</span>
                   <span className="text-[11px] text-slate-500 block leading-relaxed">
-                    Your profile is completely private. No one can view your profile except you when logged in.
+                    {t.profileBuilder.draftBannerDesc}
                   </span>
                 </div>
               </label>
@@ -260,7 +260,7 @@ export default function SettingsPage() {
           <div className="surface-card rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-xs space-y-4">
             <h3 className="font-display font-bold text-base text-slate-900 flex items-center gap-2">
               <Globe className="w-4 h-4 text-brand-500" />
-              <span>Language Preference</span>
+              <span>{t.footer.languageSection}</span>
             </h3>
 
             <div className="grid grid-cols-3 gap-3">
@@ -277,7 +277,7 @@ export default function SettingsPage() {
                     setLanguage(l.code as any);
                   }}
                   className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                    preferredLang === l.code
+                    language === l.code
                       ? 'border-brand-500 bg-brand-50 text-brand-600 shadow-2xs'
                       : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
                   }`}
@@ -293,13 +293,13 @@ export default function SettingsPage() {
           <div className="surface-card rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-xs space-y-4">
             <h3 className="font-display font-bold text-base text-slate-900 flex items-center gap-2">
               <Lock className="w-4 h-4 text-brand-500" />
-              <span>Change Password</span>
+              <span>{t.auth.resetPasswordTitle}</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                  New Password
+                  {t.auth.passwordLabel}
                 </label>
                 <input
                   type="password"
@@ -312,7 +312,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                  Confirm Password
+                  {t.auth.resetPasswordTitle}
                 </label>
                 <input
                   type="password"
@@ -333,7 +333,7 @@ export default function SettingsPage() {
               className="btn-primary py-3 px-8 rounded-2xl text-xs font-bold shadow-brand-sm flex items-center gap-2"
             >
               <Check className="w-4 h-4" />
-              <span>{saving ? 'Saving Changes...' : 'Save Settings'}</span>
+              <span>{saving ? t.common.saving : t.common.save}</span>
             </button>
           </div>
         </form>
@@ -344,10 +344,10 @@ export default function SettingsPage() {
             <div>
               <h3 className="font-display font-bold text-base text-rose-700 flex items-center gap-2">
                 <Trash2 className="w-4 h-4 text-rose-500" />
-                <span>Delete Account & Profile</span>
+                <span>{t.settings.dangerZoneTitle}</span>
               </h3>
               <p className="text-xs text-slate-500 mt-1 max-w-md">
-                Permanently delete your profile, credentials, and all uploaded links. This action is irreversible.
+                {t.settings.dangerZoneDesc}
               </p>
             </div>
 
@@ -356,7 +356,7 @@ export default function SettingsPage() {
               onClick={() => setShowDeleteModal(true)}
               className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-xs flex-shrink-0"
             >
-              Delete Account
+              {t.settings.deleteBtn}
             </button>
           </div>
         </div>
@@ -369,7 +369,7 @@ export default function SettingsPage() {
                 <AlertCircle className="w-6 h-6" />
               </div>
               <h3 className="font-display font-bold text-xl text-slate-900">
-                Are you absolutely sure?
+                {t.settings.deleteConfirm}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 This will immediately delete your user account (<span className="font-mono text-slate-900 font-bold">{user.email}</span>) and purge your profile from the discovery index.
@@ -380,7 +380,7 @@ export default function SettingsPage() {
                   onClick={() => setShowDeleteModal(false)}
                   className="btn-secondary px-4 py-2 rounded-xl text-xs font-bold"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
                 <button
                   type="button"
@@ -388,7 +388,7 @@ export default function SettingsPage() {
                   disabled={deleting}
                   className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors"
                 >
-                  {deleting ? 'Deleting...' : 'Yes, Delete Everything'}
+                  {deleting ? t.common.loading : t.settings.deleteBtn}
                 </button>
               </div>
             </div>

@@ -323,7 +323,7 @@ function DiscoverContent() {
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <h3 className="font-display font-bold text-base text-slate-900 flex items-center gap-2">
                 <Filter className="w-4 h-4 text-brand-500" />
-                <span>Filters</span>
+                <span>{t.discover.filterButton}</span>
               </h3>
               {hasActiveFilters && (
                 <button
@@ -565,7 +565,7 @@ function DiscoverContent() {
                 description={t.discover.noResultsDesc}
                 primaryActionText={t.discover.clearFilters}
                 onPrimaryAction={handleClearFilters}
-                secondaryActionText="Create Profile"
+                secondaryActionText={t.discover.createProfileCta}
                 secondaryActionHref="/signup"
               />
             )}
@@ -583,7 +583,7 @@ function DiscoverContent() {
           <div className="relative ml-auto w-full max-w-xs bg-white h-full shadow-2xl p-6 overflow-y-auto space-y-6 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                <h3 className="font-display font-bold text-lg text-slate-900">Filters</h3>
+                <h3 className="font-display font-bold text-lg text-slate-900">{t.discover.filterButton}</h3>
                 <button onClick={() => setFilterDrawerOpen(false)} className="p-1 rounded-lg text-slate-500 hover:bg-slate-100">
                   <X className="w-5 h-5" />
                 </button>
@@ -591,7 +591,7 @@ function DiscoverContent() {
 
               {/* Categories */}
               <div className="py-4 border-b border-slate-100">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Categories</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">{t.discover.categories}</h4>
                 <div className="space-y-1 max-h-40 overflow-y-auto">
                   {categories.map((cat) => (
                     <button
@@ -609,7 +609,7 @@ function DiscoverContent() {
 
               {/* Skills */}
               <div className="py-4 border-b border-slate-100">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Skills</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">{t.discover.skills}</h4>
                 <div className="flex flex-wrap gap-1 max-h-36 overflow-y-auto">
                   {skills.slice(0, 15).map((skill) => (
                     <button
@@ -627,7 +627,7 @@ function DiscoverContent() {
 
               {/* Country */}
               <div className="py-4 border-b border-slate-100">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Country</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">{t.discover.country}</h4>
                 <div className="space-y-1 max-h-36 overflow-y-auto">
                   {availableCountries.map((c) => {
                     const isSelected = selectedCountries.some(
@@ -666,7 +666,7 @@ function DiscoverContent() {
                 }}
                 className="w-full btn-primary py-3 rounded-xl text-xs font-bold text-center"
               >
-                Apply Filters ({totalCount} Results)
+                {t.discover.filterButton} ({totalCount})
               </button>
               {hasActiveFilters && (
                 <button
@@ -676,7 +676,7 @@ function DiscoverContent() {
                   }}
                   className="w-full btn-secondary py-2.5 rounded-xl text-xs font-bold text-center"
                 >
-                  Clear All
+                  {t.discover.clearFilters}
                 </button>
               )}
             </div>

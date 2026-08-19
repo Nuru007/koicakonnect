@@ -30,13 +30,11 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] py-20 flex flex-col items-center justify-center text-center px-4">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-xs font-semibold text-slate-500">Loading your dashboard...</p>
+        <p className="text-xs font-semibold text-slate-500">{t.common.loading}</p>
       </div>
     );
   }
@@ -48,12 +46,12 @@ export default function DashboardPage() {
           <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-4">
             <User className="w-6 h-6" />
           </div>
-          <h2 className="font-display font-bold text-xl text-slate-900 mb-2">Sign In Required</h2>
+          <h2 className="font-display font-bold text-xl text-slate-900 mb-2">{t.profileBuilder.signInRequiredTitle}</h2>
           <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-            Please sign in to your KOICA CONNECT account to manage your profile and identity pass.
+            {t.profileBuilder.signInRequiredDesc}
           </p>
           <Link href="/signin" className="btn-primary w-full py-3 rounded-xl text-xs font-bold block text-center shadow-brand-sm">
-            Sign In to Dashboard
+            {t.profileBuilder.signInToBuilderBtn}
           </Link>
         </div>
       </div>
@@ -67,18 +65,17 @@ export default function DashboardPage() {
 
   // Calculate profile completeness
   const completenessItems = [
-    { label: 'Basic Info & Role', isDone: Boolean(user.name && user.role) },
-    { label: 'Headshot Photo', isDone: Boolean(user.profileImage) },
-    { label: 'Professional Bio', isDone: Boolean(user.bio && user.bio.length > 20) },
-    { label: 'At least 3 Skills', isDone: Boolean(skills.length >= 3) },
-    { label: 'Areas of Interest', isDone: Boolean(interests.length >= 1) },
-    { label: 'Industry Categories', isDone: Boolean(categories.length >= 1) },
-    { label: 'LinkedIn Profile Link', isDone: Boolean(links.some(l => l.platform === 'linkedin')) },
+    { label: t.profileBuilder.step1Title, isDone: Boolean(user.name && user.role) },
+    { label: t.profileBuilder.headshotLabel, isDone: Boolean(user.profileImage) },
+    { label: t.profile.aboutTitle, isDone: Boolean(user.bio && user.bio.length > 20) },
+    { label: t.discover.skills, isDone: Boolean(skills.length >= 3) },
+    { label: t.discover.interests, isDone: Boolean(interests.length >= 1) },
+    { label: t.discover.categories, isDone: Boolean(categories.length >= 1) },
+    { label: t.profile.viewLinkedIn, isDone: Boolean(links.some(l => l.platform === 'linkedin')) },
   ];
 
   const completedCount = completenessItems.filter(i => i.isDone).length;
   const completenessPercentage = Math.round((completedCount / completenessItems.length) * 100);
-
   const missingItems = completenessItems.filter(i => !i.isDone);
 
   const handleStatusChange = async (newStatus: 'draft' | 'published' | 'private') => {
@@ -119,7 +116,7 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-bold uppercase tracking-wider text-brand-600">
-                Professional Dashboard
+                {t.nav.dashboard}
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
             </div>
@@ -127,7 +124,7 @@ export default function DashboardPage() {
               {t.dashboard.welcome}, {user.name.split(' ')[0]}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Manage your discovery visibility, digital identity, and external connections.
+              {t.dashboard.welcomeSubtitle}
             </p>
           </div>
 
@@ -179,8 +176,8 @@ export default function DashboardPage() {
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 {user.status === 'published'
-                  ? 'Your profile is discoverable in search queries, industry categories, and skill filters.'
-                  : 'Your profile is hidden from the Discover page. Only you can view it.'}
+                  ? t.profileBuilder.publishedBannerDesc
+                  : t.profileBuilder.draftBannerDesc}
               </p>
             </div>
 
@@ -192,7 +189,7 @@ export default function DashboardPage() {
                   className="w-full btn-primary py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-brand-sm"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>{updatingStatus ? 'Updating...' : t.dashboard.publishNow}</span>
+                  <span>{updatingStatus ? t.common.saving : t.dashboard.publishNow}</span>
                 </button>
               ) : (
                 <button
@@ -230,7 +227,7 @@ export default function DashboardPage() {
               {missingItems.length > 0 ? (
                 <div className="space-y-1.5">
                   <span className="text-xs font-bold text-slate-700 block">
-                    Recommended steps to improve discoverability:
+                    {t.dashboard.completenessTip}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {missingItems.slice(0, 3).map((item, idx) => (
@@ -240,7 +237,7 @@ export default function DashboardPage() {
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors"
                       >
                         <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Add {item.label}</span>
+                        <span>+ {item.label}</span>
                       </Link>
                     ))}
                   </div>
@@ -248,7 +245,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center gap-2 text-emerald-800 text-xs font-semibold">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>Your profile is 100% complete! You are primed for maximum discovery.</span>
+                  <span>{t.common.verifiedProfile} — 100%</span>
                 </div>
               )}
             </div>
@@ -266,7 +263,7 @@ export default function DashboardPage() {
                 className="btn-secondary px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 flex-shrink-0"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy Link'}</span>
+                <span>{copied ? t.profile.copied : t.profile.copyLink}</span>
               </button>
             </div>
           </div>
@@ -279,13 +276,13 @@ export default function DashboardPage() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-display font-bold text-lg text-slate-900">
-                Your Public Profile Preview
+                {t.profileBuilder.discoverCardPreview}
               </h3>
               <Link
                 href="/profile/edit"
                 className="text-xs font-bold text-brand-600 hover:underline flex items-center gap-1"
               >
-                <span>Edit Info</span>
+                <span>{t.dashboard.editProfile}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -305,7 +302,7 @@ export default function DashboardPage() {
                 href="/dashboard/qr"
                 className="text-xs font-bold text-brand-600 hover:underline flex items-center gap-1"
               >
-                <span>Full Pass</span>
+                <span>{t.nav.qrCode}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>

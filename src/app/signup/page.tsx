@@ -52,7 +52,7 @@ export default function SignUpPage() {
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long.');
+      setError(t.auth.passwordRequirements);
       return;
     }
 
@@ -60,7 +60,7 @@ export default function SignUpPage() {
     const res = await register(formData);
 
     if (res.success) {
-      setSuccessMsg('Your account has been created. Directing you to the Profile Builder...');
+      setSuccessMsg(t.auth.registerSuccess);
       setTimeout(() => {
         window.location.href = '/profile/edit';
       }, 800);
@@ -86,10 +86,10 @@ export default function SignUpPage() {
             </span>
           </Link>
           <h2 className="font-display font-bold text-2xl sm:text-3xl text-slate-900">
-            Create Your Profile
+            {t.auth.signUpTitle}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-            Join the discovery cohort and build your verified digital identity pass.
+            {t.auth.signUpSubtitle}
           </p>
         </div>
 
@@ -99,7 +99,7 @@ export default function SignUpPage() {
             <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600" />
             <div>
               <p className="font-bold">{successMsg}</p>
-              <p className="text-[11px] text-emerald-600 font-normal mt-0.5">Complete your profile to appear on Discover.</p>
+              <p className="text-[11px] text-emerald-600 font-normal mt-0.5">{t.profileBuilder.pageSubtitle}</p>
             </div>
           </div>
         )}
@@ -110,15 +110,15 @@ export default function SignUpPage() {
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600" />
               <div>
-                <p className="font-bold">An account already exists with this email.</p>
-                <p className="text-[11px] text-amber-700">Would you like to sign in instead?</p>
+                <p className="font-bold">{t.auth.emailAlreadyExists}</p>
+                <p className="text-[11px] text-amber-700">{t.auth.haveAccountPrompt}</p>
               </div>
             </div>
             <Link
               href="/signin"
               className="btn-primary py-1.5 px-3 rounded-xl text-xs font-bold whitespace-nowrap self-end sm:self-auto"
             >
-              Sign In Now
+              {t.auth.signInBtn}
             </Link>
           </div>
         )}
@@ -128,9 +128,9 @@ export default function SignUpPage() {
           <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-3 animate-in fade-in duration-200">
             <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600 mt-0.5" />
             <div>
-              <p className="font-bold">This email was associated with a deactivated account.</p>
+              <p className="font-bold">{t.auth.accountDeactivatedTitle}</p>
               <p className="text-[11px] text-rose-700 mt-0.5">
-                Please contact support if you wish to reactivate your profile.
+                {t.auth.accountDeactivatedDesc}
               </p>
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function SignUpPage() {
           {/* Full Name */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-              Full Name *
+              {t.auth.nameLabel} *
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -170,7 +170,7 @@ export default function SignUpPage() {
           {/* Email Address */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-              Email Address *
+              {t.auth.emailLabel} *
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -198,7 +198,7 @@ export default function SignUpPage() {
           {/* Password */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-              Password *
+              {t.auth.passwordLabel} *
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -225,14 +225,14 @@ export default function SignUpPage() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Must be at least 8 characters</p>
+            <p className="text-[11px] text-slate-500 mt-1">{t.auth.passwordRequirements}</p>
           </div>
 
           {/* Role & Organisation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Headline / Role *
+                {t.auth.roleLabel} *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -252,7 +252,7 @@ export default function SignUpPage() {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Organisation
+                {t.auth.orgLabel}
               </label>
               <input
                 type="text"
@@ -269,7 +269,7 @@ export default function SignUpPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Country *
+                {t.auth.countryLabel} *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -282,7 +282,7 @@ export default function SignUpPage() {
                   onChange={handleChange}
                   className="w-full pl-10 pr-9 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all appearance-none cursor-pointer"
                 >
-                  <option value="">Select country...</option>
+                  <option value="">{t.profileBuilder.selectCountry}</option>
                   {COUNTRIES.map((c) => (
                     <option key={c.code} value={c.name}>
                       {c.flag} {c.name}
@@ -297,7 +297,7 @@ export default function SignUpPage() {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                City / Location
+                {t.auth.cityLabel}
               </label>
               <input
                 type="text"
@@ -318,10 +318,10 @@ export default function SignUpPage() {
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : successMsg ? (
-              <span>Redirecting to Profile Builder...</span>
+              <span>{t.auth.registerSuccess}</span>
             ) : (
               <>
-                <span>Continue to Profile Builder</span>
+                <span>{t.auth.signUpBtn}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -330,9 +330,9 @@ export default function SignUpPage() {
 
         <div className="mt-6 pt-6 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-500">
-            Already have an account?{' '}
+            {t.auth.haveAccountPrompt}{' '}
             <Link href="/signin" className="text-brand-600 font-bold hover:underline">
-              Sign In
+              {t.auth.signInLink}
             </Link>
           </p>
         </div>

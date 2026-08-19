@@ -24,16 +24,16 @@ export const Footer: React.FC = () => {
               </span>
             </Link>
             <p className="text-sm text-slate-500 leading-relaxed max-w-sm">
-              Discover people before you network with them. The dedicated discovery and professional identity layer connecting leaders across Africa and global partner hubs.
+              {t.footer.manifesto}
             </p>
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 shadow-2xs">
                 <span className="font-display font-black text-xs text-brand-600 tracking-tight">KOICA</span>
-                <span className="text-[11px] font-semibold text-slate-700">Youth Leaders Program</span>
+                <span className="text-[11px] font-semibold text-slate-700">{t.footer.youthLeadersProgram}</span>
               </div>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                Live Directory
+                {t.footer.liveDirectory}
               </span>
             </div>
           </div>
@@ -41,22 +41,22 @@ export const Footer: React.FC = () => {
           {/* Discovery Links */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-              {t.nav.discover}
+              {t.footer.discoverSection}
             </h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li>
                 <Link href="/discover" className="hover:text-brand-600 transition-colors">
-                  Search Directory
+                  {t.footer.searchDirectory}
                 </Link>
               </li>
               <li>
                 <Link href="/categories" className="hover:text-brand-600 transition-colors">
-                  Focus Disciplines
+                  {t.footer.focusDisciplines}
                 </Link>
               </li>
               <li>
                 <Link href="/countries" className="hover:text-brand-600 transition-colors">
-                  Partner Nations
+                  {t.footer.partnerNations}
                 </Link>
               </li>
             </ul>
@@ -65,22 +65,22 @@ export const Footer: React.FC = () => {
           {/* Platform Links */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-              Platform
+              {t.footer.platformSection}
             </h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li>
                 <Link href="/signup" className="hover:text-brand-600 transition-colors">
-                  Create Profile
+                  {t.footer.createProfile}
                 </Link>
               </li>
               <li>
                 <Link href="/signin" className="hover:text-brand-600 transition-colors">
-                  Sign In
+                  {t.footer.signIn}
                 </Link>
               </li>
               <li>
                 <Link href="/dashboard/qr" className="hover:text-brand-600 transition-colors">
-                  Digital Pass & QR
+                  {t.footer.digitalPass}
                 </Link>
               </li>
             </ul>
@@ -89,7 +89,7 @@ export const Footer: React.FC = () => {
           {/* Language & Identity */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-              Language
+              {t.footer.languageSection}
             </h4>
             <div className="flex flex-col gap-1.5">
               <button
@@ -122,11 +122,11 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© 2026 KOICA CONNECT. All rights reserved.</p>
+          <p>{t.footer.copyright}</p>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5 text-slate-500">
               <Shield className="w-3.5 h-3.5 text-brand-500" />
-              Not a social network. No feeds or algorithms.
+              {t.footer.notASocialNetwork}
             </span>
           </div>
         </div>

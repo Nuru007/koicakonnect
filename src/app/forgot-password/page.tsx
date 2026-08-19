@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Network, Mail, ArrowLeft, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
   const { forgotPassword } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -25,7 +27,7 @@ export default function ForgotPasswordPage() {
     if (res.success) {
       setSubmitted(true);
     } else {
-      setError(res.error || 'Failed to process request. Please try again.');
+      setError(res.error || t.common.error);
     }
   };
 
@@ -44,10 +46,10 @@ export default function ForgotPasswordPage() {
             </span>
           </Link>
           <h2 className="font-display font-bold text-2xl sm:text-3xl text-slate-900">
-            Reset Password
+            {t.auth.forgotPasswordTitle}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Enter your email address and we&apos;ll send you instructions to reset your password.
+            {t.auth.forgotPasswordSubtitle}
           </p>
         </div>
 
@@ -57,9 +59,9 @@ export default function ForgotPasswordPage() {
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-start gap-3 text-left">
               <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600 mt-0.5" />
               <div>
-                <p className="font-bold">Password Reset Instructions Sent</p>
+                <p className="font-bold">{t.auth.resetLinkSent}</p>
                 <p className="text-[11px] text-emerald-700 font-normal mt-1">
-                  If an account exists for <span className="font-semibold">{email}</span>, you will receive a password reset link shortly.
+                  {email}
                 </p>
               </div>
             </div>
@@ -69,7 +71,7 @@ export default function ForgotPasswordPage() {
               className="w-full btn-secondary py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Sign In</span>
+              <span>{t.auth.signInLink}</span>
             </Link>
           </div>
         ) : (
@@ -84,7 +86,7 @@ export default function ForgotPasswordPage() {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Email Address
+                {t.auth.emailLabel}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -110,7 +112,7 @@ export default function ForgotPasswordPage() {
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Send Reset Instructions</span>
+                  <span>{t.common.continue}</span>
                   <Send className="w-4 h-4" />
                 </>
               )}
@@ -122,7 +124,7 @@ export default function ForgotPasswordPage() {
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-700"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Return to Sign In</span>
+                <span>{t.auth.signInLink}</span>
               </Link>
             </div>
           </form>

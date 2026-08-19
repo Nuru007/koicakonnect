@@ -73,7 +73,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
 
               {isOwnCard && (
                 <span className="px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 text-[10px] font-bold border border-brand-200 flex-shrink-0">
-                  You
+                  {t.common.you}
                 </span>
               )}
             </div>
@@ -141,7 +141,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
               ))}
               {skills.length > 3 && (
                 <span className="text-[10px] text-slate-500 self-center font-medium">
-                  +{skills.length - 3} more
+                  +{skills.length - 3} {t.common.more}
                 </span>
               )}
             </div>
@@ -196,7 +196,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
                 window.open(url, '_blank', 'noopener,noreferrer');
               }}
               className="p-1 rounded-md text-slate-400 hover:text-[#0A66C2] hover:bg-slate-100 transition-colors"
-              title="LinkedIn Profile"
+              title={t.profile.viewLinkedIn}
             >
               <Linkedin className="w-3.5 h-3.5 fill-current" />
             </button>

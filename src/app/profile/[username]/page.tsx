@@ -165,7 +165,7 @@ export default function PublicProfilePage() {
             className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-brand-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Discover</span>
+            <span>{t.profile.backToDiscover}</span>
           </Link>
 
           <div className="flex items-center gap-2">
@@ -175,7 +175,7 @@ export default function PublicProfilePage() {
                 className="btn-secondary py-1.5 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs"
               >
                 <Edit3 className="w-3.5 h-3.5" />
-                <span>Edit Profile</span>
+                <span>{t.dashboard.editProfile}</span>
               </Link>
             )}
             <button
@@ -183,7 +183,7 @@ export default function PublicProfilePage() {
               className="btn-secondary py-1.5 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Copied' : 'Share Profile'}</span>
+              <span>{copiedLink ? t.profile.copied : t.profile.shareProfile}</span>
             </button>
           </div>
         </div>
@@ -194,14 +194,14 @@ export default function PublicProfilePage() {
             <div className="flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
               <span>
-                <strong>Your profile is currently in draft mode.</strong> Only you can view this page until you publish it.
+                <strong>{t.profile.draftOwnerNotice}</strong> {t.profile.draftOwnerDesc}
               </span>
             </div>
             <Link
               href="/profile/edit"
               className="btn-primary px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap"
             >
-              Complete & Publish
+              {t.profile.completeAndPublish}
             </Link>
           </div>
         )}

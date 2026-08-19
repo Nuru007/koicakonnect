@@ -20,13 +20,11 @@ export default function QRPage() {
   const { t } = useLanguage();
   const router = useRouter();
 
-
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] py-20 flex flex-col items-center justify-center text-center px-4">
         <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-xs font-semibold text-slate-500">Loading your Digital Pass...</p>
+        <p className="text-xs font-semibold text-slate-500">{t.common.loading}</p>
       </div>
     );
   }
@@ -38,12 +36,12 @@ export default function QRPage() {
           <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-4">
             <QrCode className="w-6 h-6" />
           </div>
-          <h2 className="font-display font-bold text-xl text-slate-900 mb-2">Sign In Required</h2>
+          <h2 className="font-display font-bold text-xl text-slate-900 mb-2">{t.profileBuilder.signInRequiredTitle}</h2>
           <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-            Please sign in to view and download your Digital Identity Pass.
+            {t.profileBuilder.signInRequiredDesc}
           </p>
           <Link href="/signin" className="btn-primary w-full py-3 rounded-xl text-xs font-bold block text-center shadow-brand-sm">
-            Sign In to View Pass
+            {t.profileBuilder.signInToBuilderBtn}
           </Link>
         </div>
       </div>
@@ -53,23 +51,23 @@ export default function QRPage() {
   const useCases = [
     {
       icon: CreditCard,
-      title: 'Business Cards & Digital Badges',
-      desc: 'Print this QR code on physical business cards or digital conference badges for zero-friction discovery.',
+      title: t.qrPage.useCase1,
+      desc: t.qrPage.useCase1,
     },
     {
       icon: FileText,
-      title: 'CVs, Resumes & Portfolios',
-      desc: 'Place the QR code in the header of your PDF CV to give recruiters instant access to your verified links and skills.',
+      title: t.qrPage.useCase2,
+      desc: t.qrPage.useCase2,
     },
     {
       icon: Monitor,
-      title: 'Conference Slides & Keynotes',
-      desc: 'Embed your KOICA CONNECT QR code on the final Q&A slide during talks to let audiences connect with your work instantly.',
+      title: t.qrPage.useCase3,
+      desc: t.qrPage.useCase3,
     },
     {
       icon: Mail,
-      title: 'Email Signatures & Website Footers',
-      desc: 'Add a compact QR pass to your email signature or personal website as your digital proof of professional identity.',
+      title: t.qrPage.useCase4,
+      desc: t.qrPage.useCase4,
     },
   ];
 
@@ -84,7 +82,7 @@ export default function QRPage() {
             className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-brand-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Dashboard</span>
+            <span>{t.common.back}</span>
           </Link>
         </div>
 
@@ -92,7 +90,7 @@ export default function QRPage() {
         <div className="text-center max-w-2xl mx-auto mb-10">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-brand-600 text-xs font-bold mb-3 border border-slate-200 shadow-2xs">
             <QrCode className="w-3.5 h-3.5" />
-            <span>Digital Identity Pass</span>
+            <span>{t.qrPage.shareTitle}</span>
           </div>
           <h1 className="font-display font-black text-3xl sm:text-4xl text-slate-900 tracking-tight mb-2">
             {t.qrPage.title}
@@ -113,9 +111,6 @@ export default function QRPage() {
             <h2 className="font-display font-bold text-2xl text-slate-900 mb-2">
               {t.qrPage.useCasesTitle}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500">
-              Designed as your global identity pass for seamless offline and online discovery.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -133,9 +128,6 @@ export default function QRPage() {
                     <h3 className="font-display font-bold text-sm text-slate-900 mb-1">
                       {uc.title}
                     </h3>
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      {uc.desc}
-                    </p>
                   </div>
                 </div>
               );

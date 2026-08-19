@@ -85,28 +85,24 @@ export default function CountriesPage() {
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-brand-600 text-xs font-bold mb-3 border border-slate-200 shadow-2xs">
             <Globe className="w-3.5 h-3.5" />
-            <span>Global Directory & Cohort Hubs</span>
+            <span>{t.countriesPage.badge}</span>
           </div>
           <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-slate-900 tracking-tight mb-4">
-            Discover by Country & Region
+            {t.countriesPage.title}
           </h1>
           <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Connect with leaders, researchers, and specialists across the 5 KOICA African partner countries and international hubs.
+            {t.countriesPage.subtitle}
           </p>
 
           {/* Quick Metrics Strip */}
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs text-xs font-medium text-slate-700">
               <Users className="w-3.5 h-3.5 text-brand-500" />
-              <span><strong>{totalPublished}</strong> Published Leaders</span>
-            </div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs text-xs font-medium text-slate-700">
-              <Globe className="w-3.5 h-3.5 text-brand-500" />
-              <span><strong>5</strong> KOICA African Nations</span>
+              <span><strong>{totalPublished}</strong> {t.countriesPage.registeredLeaders}</span>
             </div>
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs text-xs font-medium text-slate-700">
               <Compass className="w-3.5 h-3.5 text-brand-500" />
-              <span><strong>{activeCountriesCount}</strong> Active Countries</span>
+              <span><strong>{activeCountriesCount}</strong> {t.countriesPage.activeNations}</span>
             </div>
           </div>
         </div>
@@ -116,13 +112,10 @@ export default function CountriesPage() {
           <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-200">
             <div>
               <h2 className="font-display font-bold text-xl sm:text-2xl text-slate-900 flex items-center gap-2">
-                <span>KOICA Focus African Nations</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-600 font-semibold border border-brand-100">
-                  5 Partner Countries
-                </span>
+                <span>{t.countriesPage.primaryCohortTitle}</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                Core partner countries of the KOICA Youth Leaders Program
+                {t.countriesPage.primaryCohortSubtitle}
               </p>
             </div>
 
@@ -130,7 +123,7 @@ export default function CountriesPage() {
               href="/discover"
               className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-700"
             >
-              <span>Explore Full Cohort</span>
+              <span>{t.home.discoverBtn}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
